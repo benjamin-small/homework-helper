@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.DS_Store
+test-results/
+.agents/**/knowledge/local/
+.agents/**/memory/local/
+*.HEIC
+*.heic
+.agents/
+.poietic-harness.json
+docs/INSTALLATION.md
+docs/VERIFICATION.md

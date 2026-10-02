@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#6550a2">
+    <meta name="description" content="A little practice, a lot of progress. Learn this week's spelling words with spoken prompts and practice that grows with you.">
+    <title>Word Workshop · Spelling practice</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='17' fill='%236550a2'/%3E%3Ctext x='32' y='44' font-size='43' font-family='sans-serif' text-anchor='middle' fill='white'%3Ew%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./src/app.js"></script>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Word Workshop home"><span class="brand-mark" aria-hidden="true">w<span>✦</span></span><span>word workshop<small>A LITTLE PRACTICE. A LOT OF PROGRESS.</small></span></a>
+        <nav aria-label="Main navigation"><button class="nav-button" id="progress-button">My progress</button><button class="sound-button" id="sound-button" aria-label="Sound settings"></button></nav>
+      </header>
+      <div id="storage-notice" class="notice" role="status" hidden></div>
+      <main id="app"></main>
+      <footer><span class="footer-dot" aria-hidden="true"></span><span id="save-status">Progress saved on this browser</span><span class="footer-end">One word at a time. You’ve got this.</span></footer>
+    </div>
+    <dialog id="settings-dialog" aria-labelledby="settings-title">
+      <form method="dialog"><button class="close-button" aria-label="Close sound settings">×</button></form>
+      <span class="eyebrow">MAKE YOURSELF COMFORTABLE</span><h2 id="settings-title">Let’s hear it.</h2>
+      <label for="voice-select">Reading voice</label><select id="voice-select"><option value="">Your device’s English voice</option></select>
+      <label for="speed-select">Reading speed</label><select id="speed-select"><option value="0.7">Nice and slow</option><option value="0.85">A little slower</option><option value="1">Regular pace</option></select>
+      <button class="primary full" id="test-voice">Try the voice <span aria-hidden="true">♫</span></button>
+      <p class="fine-print">Use your device’s volume controls. Voices labeled “device” work locally; other voices may use your browser’s speech service.</p>
+      <p id="settings-speech-status" role="status"></p>
+    </dialog>
+    <dialog id="reset-dialog" aria-labelledby="reset-title">
+      <h2 id="reset-title">Start fresh?</h2><p>This erases the spelling results saved in this browser. It cannot be undone.</p>
+      <div class="button-row"><button class="secondary" id="cancel-reset">Keep my progress</button><button class="danger" id="confirm-reset">Erase progress</button></div>
+    </dialog>
+    <noscript><p class="notice">Please enable JavaScript to use the spelling activities and save your progress.</p></noscript>
+  </body>
+</html>
