@@ -20,12 +20,12 @@ Open http://127.0.0.1:4173. Use `npm run check` to run the tests and create `dis
 
 1. **Match the meaning:** choose the word matching a short definition.
 2. **Spot the spelling:** hear a word and choose from the correct spelling and two plausible misspellings.
-3. **Fill the gaps:** hear a word and type the missing letters in a tricky part.
+3. **Fill the gaps:** hear a word and drag one of three letter tiles into its tricky part (or tap a tile / select it with the keyboard). Two consecutive correct tile answers for that word unlock typing the missing letters. Gaps have a uniform width, no letter-count label, and no answer-length input limit.
 4. **Spell it out:** hear a word, type its entire spelling, and submit.
 
 Each question is graded once, including “I’m not sure yet” as a miss. Feedback shows the correct spelling, a teaching hint, and a sample sentence. Case and surrounding whitespace are ignored; internal letters must match exactly. Spellcheck and autocorrection are disabled where the browser supports those controls.
 
-Adaptive sessions contain up to 12 distinct words. A word advances through meaning, spelling choice, and missing letters before full spelling. A full-spelling miss returns to missing-letter practice. Two consecutive correct full-spelling answers make a word “feeling solid.” Missed words have greater selection weight; the dedicated tricky-word activity includes only previously missed words that are not solid yet. A session’s retry button practices exactly the words missed in that session with appropriate support. No machine learning model is involved: adaptation is a transparent set of rules.
+Adaptive sessions contain up to 12 distinct words. A word advances through meaning, spelling choice, gap tiles, and typed missing letters before full spelling. Tile and typed results are tracked separately, and existing typed-gap progress is preserved. A full-spelling miss returns to missing-letter practice. Two consecutive correct full-spelling answers make a word “feeling solid.” Missed words have greater selection weight; the dedicated tricky-word activity includes only previously missed words that are not solid yet. A session’s retry button practices exactly the words missed in that session with appropriate support. No machine learning model is involved: adaptation is a transparent set of rules.
 
 ## Words and privacy
 

@@ -6,6 +6,12 @@ export const MODES = [
   { id: 'gaps', title: 'Fill the gaps', short: 'Complete', icon: '03', description: 'Give the tricky letters a try.' },
   { id: 'spell', title: 'Spell it out', short: 'Spell', icon: '04', description: 'Listen and write the whole word.' },
 ];
+export const RESULT_MODES = [
+  ...MODES.slice(0, 2),
+  { id: 'gaps-choice', short: 'Gap tiles' },
+  { id: 'gaps', short: 'Typed gaps' },
+  MODES[3],
+];
 export const emptyProgress = () => ({ version: 1, words: {}, sessions: 0 });
 export const normalize = value => String(value).trim().toLowerCase();
 export const isCorrect = (answer, word) => normalize(answer) === word;
@@ -20,6 +26,21 @@ export function shuffle(values, random = Math.random) {
 export function gapParts(entry) {
   const [, before, missing, after] = entry.pattern.match(/^(.*)\[([a-z]+)\](.*)$/);
   return { before, missing, after };
+}
+const GAP_DISTRACTORS = {
+  ust: ['est', 'ist'], o: ['a', 'e'], chi: ['shi', 'chee'], in: ['en', 'un'],
+  ai: ['a', 'ay'], e: ['a', 'i'], ile: ['il', 'ial'], ct: ['t', 'ckt'],
+  c: ['k', 'ck'], ti: ['si', 'ci'], i: ['a', 'e'], mm: ['m', 'mn'],
+  ou: ['o', 'oo'], ch: ['c', 'sh'], ie: ['e', 'ei'], neur: ['nuer', 'ner'],
+  a: ['e', 'o'], ea: ['ee', 'e'], g: ['j', 'gg'], io: ['oi', 'yo'], ss: ['s', 'ce'],
+};
+export function gapChoices(entry, random = Math.random) {
+  const { missing } = gapParts(entry);
+  return shuffle([missing, ...GAP_DISTRACTORS[missing]], random);
+}
+export function gapInputMethod(stats) {
+  // Preserve existing typed practice. A tile success never counts as typed work.
+  return stats?.modes?.gaps?.attempts > 0 || (stats?.modes?.['gaps-choice']?.streak || 0) >= 2 ? 'type' : 'choose';
 }
 export function choices(entry, mode, random = Math.random) {
   const alternatives = mode === 'meaning'

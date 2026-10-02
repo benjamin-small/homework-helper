@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { WORDS } from '../src/words.js';
-import { MODES, choices, emptyProgress, gapParts, isCorrect, makeQueue, mastered, needsReview, nextMode, priority, recordAnswer, totals } from '../src/engine.js';
+import { MODES, choices, emptyProgress, gapChoices, gapInputMethod, gapParts, isCorrect, makeQueue, mastered, needsReview, nextMode, priority, recordAnswer, totals } from '../src/engine.js';
+import { gapMarkup } from '../src/gap-exercise.js';
 import { STORAGE_KEY, readProgress, validProgress, writeProgress } from '../src/storage.js';
 
 test('printed list has exactly 25 words and the mechanization bonus', () => {
@@ -109,4 +110,49 @@ test('blocked storage does not stop practice and reports failed persistence', ()
   assert.equal(writeProgress(blocked, emptyProgress()), false);
   assert.ok(readProgress(undefined).error);
   assert.equal(writeProgress(undefined, emptyProgress()), false);
+});
+test('every gap offers three distinct options containing exactly one correct tile', () => {
+  for (const entry of WORDS) {
+    const options = gapChoices(entry);
+    assert.equal(options.length, 3);
+    assert.equal(new Set(options).size, 3);
+    assert.equal(options.filter(option => option === gapParts(entry).missing).length, 1);
+    assert.ok(options.every(option => /^[a-z]+$/.test(option)));
+  }
+});
+test('two consecutive tile successes unlock typed gaps without skipping typing', () => {
+  let progress = emptyProgress();
+  for (const mode of ['meaning', 'choice']) progress = recordAnswer(progress, 'machine', mode, 'machine');
+  assert.equal(gapInputMethod(progress.words.machine), 'choose');
+  progress = recordAnswer(progress, 'machine', 'gaps-choice', 'machine');
+  assert.equal(gapInputMethod(progress.words.machine), 'choose');
+  progress = recordAnswer(progress, 'machine', 'gaps-choice', 'mashine');
+  progress = recordAnswer(progress, 'machine', 'gaps-choice', 'machine');
+  assert.equal(gapInputMethod(progress.words.machine), 'choose');
+  progress = recordAnswer(progress, 'machine', 'gaps-choice', 'machine');
+  assert.equal(gapInputMethod(progress.words.machine), 'type');
+  assert.equal(nextMode(progress.words.machine), 'gaps');
+  assert.equal(progress.words.machine.modes.gaps, undefined);
+  assert.ok(validProgress(progress));
+  assert.equal(mastered(progress.words.machine), false);
+  progress = recordAnswer(progress, 'machine', 'gaps', 'machine');
+  assert.equal(nextMode(progress.words.machine), 'spell');
+  assert.equal(gapInputMethod(progress.words.factory), 'choose');
+});
+test('existing saved typed-gap work survives the upgrade and stays unlocked', () => {
+  const progress = recordAnswer(emptyProgress(), 'industry', 'gaps', 'industry');
+  assert.ok(validProgress(progress));
+  assert.equal(gapInputMethod(progress.words.industry), 'type');
+  const failed = recordAnswer(progress, 'industry', 'gaps', 'indestry');
+  assert.equal(gapInputMethod(failed.words.industry), 'type');
+});
+test('gap prompts do not expose answer length in labels, sizing, or input limits', () => {
+  for (const entry of WORDS) {
+    for (const method of ['choose', 'type']) {
+      const markup = gapMarkup(entry, method);
+      assert.doesNotMatch(markup, /\d+ missing letter|--letters|_{2,}/);
+      if (method === 'type') assert.match(markup, /maxlength="40"/);
+      assert.doesNotMatch(markup, /style=/);
+    }
+  }
 });

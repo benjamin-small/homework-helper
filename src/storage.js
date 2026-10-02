@@ -1,4 +1,4 @@
-import { emptyProgress, MODES } from './engine.js';
+import { emptyProgress, RESULT_MODES } from './engine.js';
 import { LIST_ID, WORDS } from './words.js';
 export const STORAGE_KEY = `word-workshop:${LIST_ID}:v1`;
 export const SETTINGS_KEY = 'word-workshop:settings:v1';
@@ -8,9 +8,9 @@ export function validProgress(value) {
   return Object.entries(value.words).every(([word, stat]) => WORDS.some(entry => entry.word === word)
     && stat && integer(stat.attempts) && integer(stat.correct) && integer(stat.misses)
     && stat.correct + stat.misses === stat.attempts && typeof stat.lastCorrect === 'boolean'
-    && MODES.some(mode => mode.id === stat.lastMode) && Number.isFinite(stat.lastAt)
+    && RESULT_MODES.some(mode => mode.id === stat.lastMode) && Number.isFinite(stat.lastAt)
     && stat.modes && typeof stat.modes === 'object' && !Array.isArray(stat.modes)
-    && Object.entries(stat.modes).every(([mode, result]) => MODES.some(item => item.id === mode)
+    && Object.entries(stat.modes).every(([mode, result]) => RESULT_MODES.some(item => item.id === mode)
       && result && integer(result.attempts) && integer(result.correct) && integer(result.streak)
       && result.correct <= result.attempts && result.streak <= result.correct && typeof result.lastCorrect === 'boolean'));
 }

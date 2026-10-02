@@ -1,6 +1,7 @@
 import { WORDS } from './words.js';
-import { MODES, choices, emptyProgress, gapParts, makeQueue, mastered, needsReview, nextMode, recordAnswer, totals } from './engine.js';
+import { MODES, RESULT_MODES, choices, emptyProgress, gapInputMethod, gapParts, makeQueue, mastered, needsReview, nextMode, recordAnswer, totals } from './engine.js';
 import { SETTINGS_KEY, STORAGE_KEY, readProgress, writeProgress } from './storage.js';
+import { gapMarkup, mountGapChoices } from './gap-exercise.js';
 
 const $ = selector => document.querySelector(selector);
 const app = $('#app');
@@ -26,6 +27,7 @@ let speechId = 0;
 let speechTimer;
 let utterance;
 let voices = [];
+let disposeGapChoices = null;
 
 function notice(message) {
   $('#storage-notice').textContent = message;
@@ -106,6 +108,8 @@ $('#settings-dialog').addEventListener('close', stopSpeech);
 $('#progress-button').addEventListener('click', () => showProgress());
 
 function setView(name, html) {
+  disposeGapChoices?.();
+  disposeGapChoices = null;
   view = name;
   $('#progress-button').textContent = name === 'quiz' ? 'Finish practice' : 'My progress';
   stopSpeech();
@@ -150,19 +154,19 @@ function startSession(mode = 'adaptive', review = false, wordList = null) {
 function showQuestion() {
   const entry = entryFor(session.queue[session.index]);
   const mode = session.mode === 'adaptive' ? nextMode(progress.words[entry.word]) : session.mode;
-  question = { entry, mode, graded: false };
+  const gapMethod = mode === 'gaps' ? gapInputMethod(progress.words[entry.word]) : null;
+  question = { entry, mode, answerMode: gapMethod === 'choose' ? 'gaps-choice' : mode, gapAnswer: '', graded: false };
   const current = modeById(mode);
   const gaps = mode === 'gaps' ? gapParts(entry) : null;
   const prompt = { meaning: 'Which word fits this meaning?', choice: 'Which spelling looks right?', gaps: 'Make the word complete.', spell: 'You’ve got the whole word.' }[mode];
-  const instruction = { meaning: entry.definition, choice: 'Listen carefully, then choose the correct spelling.', gaps: 'Listen, then type the missing letters.', spell: 'Listen, then type what you hear.' }[mode];
+  const instruction = { meaning: entry.definition, choice: 'Listen carefully, then choose the correct spelling.', gaps: gapMethod === 'choose' ? 'Listen, then find the letters that complete the word.' : 'Listen, then type the missing letters.', spell: 'Listen, then type what you hear.' }[mode];
   let answerArea;
   if (mode === 'meaning' || mode === 'choice') {
     answerArea = `<div class="answer-options" role="group" aria-label="Answer choices">${choices(entry, mode).map((choice, i) => `<button class="answer-option" data-answer="${choice}"><span class="option-number" aria-hidden="true">${String.fromCharCode(65 + i)}</span><span>${choice}</span><span class="option-result" aria-hidden="true"></span></button>`).join('')}</div>`;
   } else {
-    answerArea = `<form id="answer-form" autocomplete="off"><label class="input-label" for="spelling-input">${mode === 'gaps' ? `${gaps.missing.length} missing letter${gaps.missing.length === 1 ? '' : 's'}` : 'Your spelling'}</label>
-      ${gaps ? `<div class="gap-word" aria-label="Word with missing letters"><span>${gaps.before}</span><input id="spelling-input" class="gap-input" style="--letters:${Math.max(gaps.missing.length, 2)}" aria-label="${gaps.missing.length} missing letters between ${gaps.before || 'the start'} and ${gaps.after || 'the end'}" maxlength="${gaps.missing.length}" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" required><span>${gaps.after}</span></div>`
-        : '<input id="spelling-input" class="spell-input" type="text" maxlength="40" placeholder="Type the word here…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" required aria-describedby="input-help">'}
-      <p class="fine-print" id="input-help">${gaps ? 'Only fill in the empty space.' : 'Take your time. Capital letters are okay.'}</p>
+    answerArea = `<form id="answer-form" autocomplete="off">
+      ${gaps ? gapMarkup(entry, gapMethod)
+        : '<label class="input-label" for="spelling-input">Your spelling</label><input id="spelling-input" class="spell-input" type="text" maxlength="40" placeholder="Type the word here…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" required aria-describedby="input-help"><p class="fine-print" id="input-help">Take your time. Capital letters are okay.</p>'}
       <button class="primary full" type="submit" id="submit-answer" disabled>Check my spelling <span aria-hidden="true">→</span></button></form>`;
   }
   setView('quiz', `<div class="quiz-topline"><button class="text-button" id="end-practice">← Finish for now</button><span>${session.review ? 'TRICKY WORD PRACTICE' : session.mode === 'adaptive' ? 'YOUR PERSONAL PRACTICE' : current.title.toUpperCase()}</span></div>
@@ -177,10 +181,15 @@ function showQuestion() {
   $('#skip-answer').addEventListener('click', () => grade(''));
   app.querySelectorAll('[data-answer]').forEach(button => button.addEventListener('click', () => grade(button.dataset.answer)));
   if ($('#answer-form')) {
-    $('#spelling-input').addEventListener('input', event => { $('#submit-answer').disabled = !event.target.value.trim(); });
+    if (gapMethod === 'choose') {
+      disposeGapChoices = mountGapChoices(app, letters => {
+        question.gapAnswer = letters;
+        $('#submit-answer').disabled = !letters;
+      });
+    } else $('#spelling-input').addEventListener('input', event => { $('#submit-answer').disabled = !event.target.value.trim(); });
     $('#answer-form').addEventListener('submit', event => {
       event.preventDefault();
-      const typed = $('#spelling-input').value.trim();
+      const typed = gapMethod === 'choose' ? question.gapAnswer : $('#spelling-input').value.trim();
       if (!typed) return;
       grade(gaps ? gaps.before + typed.toLowerCase() + gaps.after : typed);
     });
@@ -191,8 +200,8 @@ function showQuestion() {
 function grade(answer) {
   if (!question || question.graded || view !== 'quiz') return;
   question.graded = true;
-  const { entry, mode } = question;
-  progress = recordAnswer(progress, entry.word, mode, answer);
+  const { entry, mode, answerMode } = question;
+  progress = recordAnswer(progress, entry.word, answerMode, answer);
   const correct = progress.words[entry.word].lastCorrect;
   session.answers.push({ word: entry.word, correct, mode });
   $('.session-score strong').textContent = session.answers.filter(item => item.correct).length;
@@ -205,11 +214,18 @@ function grade(answer) {
     else if (button.dataset.answer === answer) { button.classList.add('incorrect'); button.querySelector('.option-result').textContent = '×'; }
   });
   if ($('#spelling-input')) { $('#spelling-input').disabled = true; $('#submit-answer').hidden = true; }
+  if ($('#gap-drop')) {
+    disposeGapChoices?.(); disposeGapChoices = null;
+    app.querySelectorAll('.letter-tile, #gap-drop').forEach(button => { button.disabled = true; });
+    $('#submit-answer').hidden = true;
+    $('#tile-status').hidden = true;
+    $('#input-help').hidden = true;
+  }
   $('.question-bottom').hidden = true;
   const feedback = $('#feedback');
   feedback.className = `feedback ${correct ? 'positive' : 'keep-going'}`;
   feedback.innerHTML = `<div class="feedback-heading"><span aria-hidden="true">${correct ? '✓' : '↗'}</span><strong>${correct ? 'That’s it. Nicely done!' : answer ? 'Not quite. Let’s learn this one.' : 'Let’s learn this one together.'}</strong></div>
-    <div class="correct-word">${entry.word}</div><p>${entry.hint}</p><p class="word-example">${entry.sentence}</p><button class="primary full" id="next-question">${session.index + 1 < session.queue.length ? 'Next word' : 'See how you did'} <span aria-hidden="true">→</span></button>`;
+    <div class="correct-word">${entry.word}</div><p>${entry.hint}</p><p class="word-example">${entry.sentence}</p>${answerMode === 'gaps-choice' && correct ? `<p class="tile-milestone">${gapInputMethod(progress.words[entry.word]) === 'type' ? 'Next time, you’ll type the missing letters for this word!' : 'One more correct tile answer for this word unlocks typing.'}</p>` : ''}<button class="primary full" id="next-question">${session.index + 1 < session.queue.length ? 'Next word' : 'See how you did'} <span aria-hidden="true">→</span></button>`;
   $('#next-question').addEventListener('click', () => {
     session.index++;
     if (session.index >= session.queue.length) showSummary(); else showQuestion();
@@ -237,7 +253,7 @@ function showProgress() {
   setView('progress', `<div class="quiz-topline"><button class="text-button" id="back-home">← Back to practice</button><span>YOUR LEARNING NOTEBOOK</span></div><section class="progress-page"><span class="eyebrow">ONE WORD AT A TIME</span><h1 tabindex="-1">Look how far you’ve come.</h1><p>${total.mastered} words feeling solid. ${total.practiced} words tried. Every little bit adds up.</p><div class="progress-legend"><span>○ Not tried</span><span>◐ Practicing</span><span>✓ Feeling solid</span></div><div class="word-list">${WORDS.map(entry => {
     const stats = progress.words[entry.word];
     const status = mastered(stats) ? 'solid' : stats ? 'practicing' : 'new';
-    return `<details class="word-row status-${status}"><summary><span class="word-status" aria-label="${status === 'solid' ? 'Feeling solid' : status === 'new' ? 'Not tried' : 'Practicing'}">${status === 'solid' ? '✓' : status === 'new' ? '○' : '◐'}</span><strong>${entry.word}${entry.bonus ? '<small> BONUS</small>' : ''}</strong><span class="word-result">${stats ? `${stats.correct} / ${stats.attempts} correct` : 'Ready to try'}</span><span aria-hidden="true">＋</span></summary><div class="word-detail"><p>${entry.definition}</p><p class="fine-print">${entry.hint}</p><div class="mode-results">${MODES.map(mode => `<span>${mode.short}: ${stats?.modes[mode.id] ? `${stats.modes[mode.id].correct}/${stats.modes[mode.id].attempts}` : 'not tried'}</span>`).join('')}</div><button class="secondary" data-practice-word="${entry.word}">Practice this word →</button></div></details>`;
+    return `<details class="word-row status-${status}"><summary><span class="word-status" role="img" aria-label="${status === 'solid' ? 'Feeling solid' : status === 'new' ? 'Not tried' : 'Practicing'}">${status === 'solid' ? '✓' : status === 'new' ? '○' : '◐'}</span><strong>${entry.word}${entry.bonus ? '<small> BONUS</small>' : ''}</strong><span class="word-result">${stats ? `${stats.correct} / ${stats.attempts} correct` : 'Ready to try'}</span><span aria-hidden="true">＋</span></summary><div class="word-detail"><p>${entry.definition}</p><p class="fine-print">${entry.hint}</p><div class="mode-results">${RESULT_MODES.map(mode => `<span>${mode.short}: ${stats?.modes[mode.id] ? `${stats.modes[mode.id].correct}/${stats.modes[mode.id].attempts}` : 'not tried'}</span>`).join('')}</div><button class="secondary" data-practice-word="${entry.word}">Practice this word →</button></div></details>`;
   }).join('')}</div><div class="data-note"><p>Saved only in this browser. Clearing site data or using a different browser starts a new record. Private browsing may erase results when you close it.</p><button class="text-button" id="reset-progress">Reset progress</button></div></section>`);
   $('#back-home').addEventListener('click', () => { showHome(); focusTitle(); });
   $('#reset-progress').addEventListener('click', () => $('#reset-dialog').showModal());
