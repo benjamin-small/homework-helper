@@ -51,6 +51,7 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
     if (!writeSettings(storage, settings)) notice('Your selection and preferences cannot be saved right now. They will last until this page closes.');
   }
   const modeById = id => MODES.find(mode => mode.id === id);
+  const preferredGoogleVoice = () => voices.find(voice => voice.lang === 'en-US' && voice.name.toLowerCase() === 'google us english');
   function stopSpeech() {
     speechId++;
     clearTimeout(speechTimer);
@@ -72,6 +73,7 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
     utterance.lang = 'en-US';
     utterance.rate = settings.rate;
     const voice = voices.find(item => item.voiceURI === settings.voice)
+      || preferredGoogleVoice()
       || voices.find(item => item.lang === 'en-US' && item.localService)
       || voices.find(item => item.lang.startsWith('en') && item.localService)
       || voices.find(item => item.lang.startsWith('en'));
@@ -92,9 +94,9 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
   function refreshVoices() {
     voices = window.speechSynthesis?.getVoices().filter(voice => voice.lang.startsWith('en')) || [];
     const select = $('#voice-select');
-    select.replaceChildren(new Option('Your device’s English voice', ''));
+    select.replaceChildren(new Option(preferredGoogleVoice() ? 'Automatic · Google US English' : 'Automatic · your device’s English voice', ''));
     for (const voice of voices) select.add(new Option(`${voice.name} (${voice.lang})${voice.localService ? ' · device' : ''}`, voice.voiceURI));
-    select.value = settings.voice;
+    select.value = voices.some(voice => voice.voiceURI === settings.voice) ? settings.voice : '';
   }
   refreshVoices();
   window.speechSynthesis?.addEventListener('voiceschanged', refreshVoices);
