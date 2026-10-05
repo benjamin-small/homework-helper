@@ -7,12 +7,14 @@ const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 createServer(async (request, response) => {
   try {
     const path = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
-    const relative = path === '/' ? 'index.html' : path.slice(1);
+    const preview = path === '/test-lists.html';
+    const relative = path === '/' || preview ? 'index.html' : path.slice(1);
     const file = resolve(root, relative);
     if (!file.startsWith(root + sep) || relative.split('/').some(part => part.startsWith('.')) || !types[extname(file)]) {
       response.writeHead(404).end('Not found'); return;
     }
-    const content = await readFile(file);
+    let content = await readFile(file);
+    if (preview) content = content.toString().replace('./src/main.js', './tests/fixtures/preview.js');
     response.writeHead(200, { 'Content-Type': types[extname(file)], 'Cache-Control': 'no-store' }).end(content);
   } catch { response.writeHead(404).end('Not found'); }
 }).listen(port, '127.0.0.1', () => console.log(`Word Workshop: http://127.0.0.1:${port}`));

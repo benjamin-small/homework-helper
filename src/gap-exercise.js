@@ -1,6 +1,6 @@
 import { gapChoices, gapParts } from './engine.js';
 
-export function gapMarkup(entry, method) {
+export function gapMarkup(entry, method, options = null) {
   const { before, after } = gapParts(entry);
   const context = `Missing letters between ${before || 'the start'} and ${after || 'the end'}`;
   if (method === 'type') return `
@@ -11,13 +11,13 @@ export function gapMarkup(entry, method) {
     <p class="input-label" id="gap-label">Choose the missing letters</p>
     <div class="gap-word" role="group" aria-label="Word with missing letters"><span>${before}</span><button type="button" id="gap-drop" class="gap-drop" aria-label="Empty gap: ${context}" aria-describedby="input-help">?</button><span>${after}</span></div>
     <p class="fine-print" id="input-help">Drag a tile into the gap, or tap a tile to choose it. Then check your spelling.</p>
-    <div class="letter-options" role="group" aria-label="Missing-letter choices">${gapChoices(entry).map(letters => `<button type="button" class="letter-tile" data-letters="${letters}" aria-pressed="false">${letters}</button>`).join('')}</div>
+    <div class="letter-options" role="group" aria-label="Missing-letter choices">${(options || gapChoices(entry)).map(letters => `<button type="button" class="letter-tile" data-letters="${letters}" aria-pressed="false">${letters}</button>`).join('')}</div>
     <p class="tile-status" id="tile-status" role="status" aria-live="polite">Two correct tile answers for this word unlock typing.</p>`;
 }
 
 // Pointer events support mouse, pen, and touch; native buttons also support
 // tap/click, Enter, and Space. Selecting a tile never submits an answer.
-export function mountGapChoices(root, onChange) {
+export function mountGapChoices(root, onChange, initialValue = '') {
   const drop = root.querySelector('#gap-drop');
   const tiles = [...root.querySelectorAll('.letter-tile')];
   const status = root.querySelector('#tile-status');
@@ -94,5 +94,6 @@ export function mountGapChoices(root, onChange) {
       if (event.key === 'Enter' || event.key === ' ') suppressClick = false;
     }, { signal });
   }
+  if (initialValue) select(initialValue);
   return () => { cleanupDrag(); controller.abort(); };
 }

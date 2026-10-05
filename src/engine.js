@@ -1,5 +1,3 @@
-import { WORDS } from './words.js';
-
 export const MODES = [
   { id: 'meaning', title: 'Match the meaning', short: 'Meaning', icon: '01', description: 'Read a clue. Find its word.' },
   { id: 'choice', title: 'Spot the spelling', short: 'Choose', icon: '02', description: 'Listen. Pick the right spelling.' },
@@ -27,24 +25,17 @@ export function gapParts(entry) {
   const [, before, missing, after] = entry.pattern.match(/^(.*)\[([a-z]+)\](.*)$/);
   return { before, missing, after };
 }
-const GAP_DISTRACTORS = {
-  ust: ['est', 'ist'], o: ['a', 'e'], chi: ['shi', 'chee'], in: ['en', 'un'],
-  ai: ['a', 'ay'], e: ['a', 'i'], ile: ['il', 'ial'], ct: ['t', 'ckt'],
-  c: ['k', 'ck'], ti: ['si', 'ci'], i: ['a', 'e'], mm: ['m', 'mn'],
-  ou: ['o', 'oo'], ch: ['c', 'sh'], ie: ['e', 'ei'], neur: ['nuer', 'ner'],
-  a: ['e', 'o'], ea: ['ee', 'e'], g: ['j', 'gg'], io: ['oi', 'yo'], ss: ['s', 'ce'],
-};
 export function gapChoices(entry, random = Math.random) {
   const { missing } = gapParts(entry);
-  return shuffle([missing, ...GAP_DISTRACTORS[missing]], random);
+  return shuffle([missing, ...entry.gapDistractors], random);
 }
 export function gapInputMethod(stats) {
   // Preserve existing typed practice. A tile success never counts as typed work.
   return stats?.modes?.gaps?.attempts > 0 || (stats?.modes?.['gaps-choice']?.streak || 0) >= 2 ? 'type' : 'choose';
 }
-export function choices(entry, mode, random = Math.random) {
+export function choices(words, entry, mode, random = Math.random) {
   const alternatives = mode === 'meaning'
-    ? shuffle(WORDS.filter(item => item.word !== entry.word), random).slice(0, 2).map(item => item.word)
+    ? entry.meaningDistractors || shuffle(words.filter(item => item.word !== entry.word), random).slice(0, 2).map(item => item.word)
     : entry.misspellings;
   return shuffle([entry.word, ...alternatives], random);
 }
@@ -93,15 +84,15 @@ export function priority(stats) {
   if (stats.lastCorrect === false) return 12;
   return needsReview(stats) ? 7 : 4;
 }
-export function makeQueue(progress, { review = false, includeBonus = true, random = Math.random, count = 12 } = {}) {
-  const pool = WORDS.filter(word => (includeBonus || !word.bonus) && (!review || needsReview(progress.words[word.word])));
+export function makeQueue(words, progress, { review = false, includeBonus = true, random = Math.random, count = 12 } = {}) {
+  const pool = words.filter(word => (includeBonus || !word.bonus) && (!review || needsReview(progress.words[word.word])));
   // Weighted sampling without replacement: difficult words are more likely and
   // appear earlier, while unseen words still get a turn. No immediate repeats.
   return pool.map(entry => ({ word: entry.word, key: -Math.log(Math.max(random(), Number.EPSILON)) / priority(progress.words[entry.word]) }))
     .sort((a, b) => a.key - b.key).slice(0, count).map(item => item.word);
 }
-export function totals(progress) {
-  const stats = WORDS.map(word => progress.words[word.word]).filter(Boolean);
+export function totals(words, progress) {
+  const stats = words.map(word => progress.words[word.word]).filter(Boolean);
   const attempts = stats.reduce((n, stat) => n + stat.attempts, 0);
   const correct = stats.reduce((n, stat) => n + stat.correct, 0);
   return { attempts, correct, accuracy: attempts ? Math.round(100 * correct / attempts) : 0,
