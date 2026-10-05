@@ -1,4 +1,13 @@
 @charset "UTF-8";
+body:has(.question-sliding){overflow-x:clip}
+.question-transition-layer{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:5}
+.quiz-card{touch-action:pan-y pinch-zoom}
+.previous-edge{position:fixed;left:0;top:176px;bottom:70px;width:clamp(44px,calc((100vw - 1120px)/2),80px);border:0;border-radius:0 16px 16px 0;background:transparent;color:var(--purple);z-index:2}
+.previous-edge span{font-size:42px;line-height:1}.previous-edge:hover{background:linear-gradient(to right,var(--lavender),transparent)}
+.previous-edge:focus-visible{outline-offset:-5px}
+.swipe-hint{display:none;font-size:11px;color:var(--muted);margin:-10px 0 18px}
+@media(max-width:760px){.previous-edge{display:none}.swipe-hint:not([hidden]){display:block}}
+@media(pointer:coarse){.swipe-hint:not([hidden]){display:block}}
 .quiz-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 16px;margin-bottom:18px}
 .quiz-controls>.text-button{min-height:44px}.auto-advance-toggle{display:flex;align-items:center;gap:8px;min-height:44px;font-size:11px;color:var(--muted);cursor:pointer}
 .auto-advance-toggle input{width:18px;height:18px;margin:0;accent-color:var(--purple);flex-shrink:0}

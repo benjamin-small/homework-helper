@@ -100,7 +100,7 @@ test('reviewing summary answers does not add sessions or erase misses', () => {
   assert.equal(finished.words.pizza.misses, 1);
 });
 
-test('auto-advance is opt-in and applies only to freshly graded correct answers', () => {
+test('auto-advance applies only to freshly graded correct answers when enabled', () => {
   for (const answer of ['machine', 'mashine', '']) {
     const session = start('spell');
     let progress = emptyProgress();

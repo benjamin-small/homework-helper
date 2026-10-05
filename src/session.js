@@ -1,6 +1,6 @@
 import { choices, gapChoices, gapInputMethod, nextMode, recordAnswer } from './engine.js';
 
-export const AUTO_ADVANCE_MS = 2000;
+export const AUTO_ADVANCE_MS = 800;
 
 export function createSession(listId, queue, mode = 'adaptive', review = false) {
   return { listId, queue: [...queue], mode, review, index: 0, questions: [], answers: [], finished: false };

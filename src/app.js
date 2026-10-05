@@ -3,6 +3,7 @@ import { SETTINGS_KEY, progressKey, createProgressStore, readSettings, writeSett
 import { validateCatalog } from './list-schema.js';
 import { gapMarkup, mountGapChoices } from './gap-exercise.js';
 import { createSession, questionFor, answerQuestion, goToQuestion, finishSession, canAutoAdvance, createAdvanceTimer } from './session.js';
+import { mountQuestionSwipes, captureQuestionCard, slideQuestionCards } from './question-navigation.js';
 
 export function startApp(lists, defaultListId = lists[0]?.id) {
   validateCatalog(lists);
@@ -29,6 +30,8 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
   let utterance;
   let voices = [];
   let disposeGapChoices = null;
+  let disposeQuestionSwipes = null;
+  let cancelQuestionAnimation = null;
 
   function notice(message) {
     $('#storage-notice').textContent = message;
@@ -112,6 +115,8 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
 
   function setView(name, html) {
     cancelAutoAdvance();
+    disposeQuestionSwipes?.(); disposeQuestionSwipes = null;
+    cancelQuestionAnimation?.(); cancelQuestionAnimation = null;
     disposeGapChoices?.();
     disposeGapChoices = null;
     view = name;
@@ -188,10 +193,11 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
           : '<label class="input-label" for="spelling-input">Your spelling</label><input id="spelling-input" class="spell-input" type="text" maxlength="40" placeholder="Type the word here…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" required aria-describedby="input-help"><p class="fine-print" id="input-help">Take your time. Capital letters are okay.</p>'}
         <button class="primary full" type="submit" id="submit-answer" disabled>Check my spelling <span aria-hidden="true">→</span></button></form>`;
     }
-    setView('quiz', `<div class="quiz-topline"><button class="text-button" id="end-practice">← ${session.finished ? 'Back to results' : 'Finish for now'}</button><span>${session.review ? 'TRICKY WORD PRACTICE' : session.mode === 'adaptive' ? 'YOUR PERSONAL PRACTICE' : current.title.toUpperCase()}</span></div>
+    setView('quiz', `<button type="button" class="previous-edge" id="previous-edge" aria-label="Go to previous question" title="Previous question" ${session.index === 0 ? 'hidden' : ''}><span aria-hidden="true">‹</span></button><div class="quiz-topline"><button class="text-button" id="end-practice">← ${session.finished ? 'Back to results' : 'Finish for now'}</button><span>${session.review ? 'TRICKY WORD PRACTICE' : session.mode === 'adaptive' ? 'YOUR PERSONAL PRACTICE' : current.title.toUpperCase()}</span></div>
       <div class="quiz-layout"><section class="quiz-card"><div class="question-top"><span class="pill">${current.icon} / ${current.short}</span><span>Question <strong>${session.index + 1}</strong> of ${session.queue.length}</span></div>
         <div class="session-track" role="progressbar" aria-label="Session progress" aria-valuemin="0" aria-valuemax="${session.queue.length}" aria-valuenow="${session.answers.length}"><span style="width:${session.answers.length / session.queue.length * 100}%"></span></div>
         <div class="quiz-controls"><button type="button" class="text-button" id="previous-question" ${session.index === 0 ? 'disabled' : ''}>← Previous question</button><label class="auto-advance-toggle"><input id="auto-advance-toggle" type="checkbox" ${settings.autoAdvance ? 'checked' : ''}> Auto-advance correct answers</label></div>
+        <p class="swipe-hint" ${session.index === 0 ? 'hidden' : ''}>Swipe right on the card to go back.</p>
         ${reviewingQuestion ? `<div class="history-note"><p>Previously answered. Reviewing won’t change your score.</p>${!session.finished && session.answers.length < session.queue.length ? '<button class="text-button" id="return-current">Back to current question →</button>' : ''}</div>` : ''}
         <h1 tabindex="-1">${prompt}</h1><p class="question-instruction ${mode === 'meaning' ? 'definition' : ''}">${escapeHtml(instruction)}</p>
         <button class="listen-button" id="listen-button">${speakerIcon}<span>${mode === 'meaning' ? 'Read the clue' : 'Listen to the word'}</span></button><p class="speech-status" id="speech-status" role="status"></p>
@@ -199,6 +205,11 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
       </section><aside class="quiz-aside"><div class="small-art" aria-hidden="true">a<span>✦</span></div><span class="eyebrow">PRACTICE MAKES PROGRESS</span><h2>Every try<br>counts.</h2><p>A mistake is just a word asking for a little more practice.</p><div class="session-score"><strong>${session.answers.filter(answer => answer.correct).length}</strong><span>correct so far</span></div><div class="stage-path">${MODES.map(stage => `<div class="${stage.id === mode ? 'current-stage' : ''}"><span>${stage.icon}</span>${stage.short}${stage.id === mode ? '<small>YOU ARE HERE</small>' : ''}</div>`).join('')}</div></aside></div>`);
     $('#listen-button').addEventListener('click', () => { cancelAutoAdvance(); speak(mode === 'meaning' ? entry.definition : entry.word); });
     $('#previous-question').addEventListener('click', () => navigateQuestion(session.index - 1));
+    $('#previous-edge').addEventListener('click', () => navigateQuestion(session.index - 1));
+    disposeQuestionSwipes = mountQuestionSwipes($('.quiz-card'), direction => {
+      if (direction === 'back') navigateQuestion(session.index - 1);
+      else if (question.graded) advanceQuestion();
+    }, cancelAutoAdvance);
     $('#return-current')?.addEventListener('click', () => navigateQuestion(session.answers.length));
     $('#auto-advance-toggle').addEventListener('change', event => {
       settings.autoAdvance = event.target.checked;
@@ -277,7 +288,14 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
   }
   function navigateQuestion(index) {
     cancelAutoAdvance();
-    if (session && goToQuestion(session, index)) showQuestion();
+    if (!session || index === session.index) return;
+    cancelQuestionAnimation?.(); cancelQuestionAnimation = null;
+    const previous = captureQuestionCard($('.quiz-card'));
+    const direction = index < session.index ? 'back' : 'forward';
+    if (goToQuestion(session, index)) {
+      showQuestion();
+      cancelQuestionAnimation = slideQuestionCards(previous, $('.quiz-card'), direction);
+    }
   }
   function advanceQuestion() {
     cancelAutoAdvance();
@@ -297,7 +315,7 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
       || !canAutoAdvance(session, question, settings.autoAdvance, reviewingQuestion)) return;
     const expectedSession = session;
     const expectedQuestion = question;
-    $('#auto-advance-status').textContent = session.index + 1 < session.queue.length ? 'Next question in 2 seconds.' : 'Your results will open in 2 seconds.';
+    $('#auto-advance-status').textContent = session.index + 1 < session.queue.length ? 'Moving to the next question…' : 'Opening your results…';
     $('#auto-advance-status').hidden = false;
     $('#pause-auto-advance').hidden = false;
     advanceTimer.start(() => {
