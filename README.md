@@ -29,6 +29,10 @@ For local testing, open http://127.0.0.1:4173/test-lists.html. This adds a three
 
 Each question is graded once, including “I’m not sure yet” as a miss. Feedback shows the correct spelling, a teaching hint, and a sample sentence. Case and surrounding whitespace are ignored; internal letters must match exactly. Spellcheck and autocorrection are disabled where the browser supports those controls.
 
+Use **Previous question** to revisit answered questions in the current session. Original choices, your answer, and feedback stay visible without changing scores or streaks. **Back to current question** restores an unfinished typed answer or selected tile. The results screen also offers **Review answers**; reviewing and returning to results never counts another session. Question history and drafts last only for the current page visit and are not saved to browser storage.
+
+**Auto-advance correct answers** is an optional checkbox on the question card, off by default and remembered across lists. When enabled, a new correct answer advances after two seconds (or opens results after the last question). Missed and skipped answers stay on screen. **Stay on this question**, turning the toggle off, navigating back, listening again, opening sound settings, or hiding/leaving the page cancels a pending advance. Reviewing old answers never starts the timer.
+
 Adaptive sessions contain up to 12 distinct words. A word advances through meaning, spelling choice, gap tiles, and typed missing letters before full spelling. Tile and typed results are tracked separately, and existing typed-gap progress is preserved. A full-spelling miss returns to missing-letter practice. Two consecutive correct full-spelling answers make a word “feeling solid.” Missed words have greater selection weight; the dedicated tricky-word activity includes only previously missed words that are not solid yet. A session’s retry button practices exactly the words missed in that session with appropriate support. No machine learning model is involved: adaptation is a transparent set of rules.
 
 ## Words and privacy

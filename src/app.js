@@ -1,7 +1,8 @@
-import { MODES, RESULT_MODES, choices, emptyProgress, gapInputMethod, gapParts, makeQueue, mastered, needsReview, nextMode, recordAnswer, totals } from './engine.js';
+import { MODES, RESULT_MODES, emptyProgress, gapParts, makeQueue, mastered, needsReview, totals } from './engine.js';
 import { SETTINGS_KEY, progressKey, createProgressStore, readSettings, writeSettings } from './storage.js';
 import { validateCatalog } from './list-schema.js';
 import { gapMarkup, mountGapChoices } from './gap-exercise.js';
+import { createSession, questionFor, answerQuestion, goToQuestion, finishSession, canAutoAdvance, createAdvanceTimer } from './session.js';
 
 export function startApp(lists, defaultListId = lists[0]?.id) {
   validateCatalog(lists);
@@ -20,6 +21,8 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
   const escapeHtml = value => String(value).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
   let session = null;
   let question = null;
+  let reviewingQuestion = false;
+  const advanceTimer = createAdvanceTimer();
   let view = 'home';
   let speechId = 0;
   let speechTimer;
@@ -48,7 +51,6 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
     if (!writeSettings(storage, settings)) notice('Your selection and preferences cannot be saved right now. They will last until this page closes.');
   }
   const modeById = id => MODES.find(mode => mode.id === id);
-  const entryFor = word => activeList.words.find(entry => entry.word === word);
   function stopSpeech() {
     speechId++;
     clearTimeout(speechTimer);
@@ -97,6 +99,7 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
   refreshVoices();
   window.speechSynthesis?.addEventListener('voiceschanged', refreshVoices);
   $('#sound-button').addEventListener('click', () => {
+    cancelAutoAdvance();
     refreshVoices(); $('#speed-select').value = String(settings.rate); $('#settings-dialog').showModal();
   });
   $('#voice-select').addEventListener('change', event => { settings.voice = event.target.value; saveSettings(); });
@@ -106,10 +109,11 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
   $('#progress-button').addEventListener('click', () => showProgress());
 
   function setView(name, html) {
+    cancelAutoAdvance();
     disposeGapChoices?.();
     disposeGapChoices = null;
     view = name;
-    $('#progress-button').textContent = name === 'quiz' ? 'Finish practice' : 'My progress';
+    $('#progress-button').textContent = name === 'quiz' ? session.finished ? 'Results' : 'Finish practice' : 'My progress';
     stopSpeech();
     app.innerHTML = (name === 'home' ? '' : `<p class="list-context">${escapeHtml(activeList.title)}</p>`) + html;
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -162,35 +166,43 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
   function startSession(mode = 'adaptive', review = false, wordList = null) {
     const queue = wordList || makeQueue(activeList.words, progress, { review, includeBonus: includeBonus() });
     if (!queue.length) { showHome(); return; }
-    session = { listId: activeList.id, queue, mode, review, index: 0, answers: [] };
+    session = createSession(activeList.id, queue, mode, review);
     showQuestion();
   }
   function showQuestion() {
-    const entry = entryFor(session.queue[session.index]);
-    const mode = session.mode === 'adaptive' ? nextMode(progress.words[entry.word]) : session.mode;
-    const gapMethod = mode === 'gaps' ? gapInputMethod(progress.words[entry.word]) : null;
-    question = { entry, mode, answerMode: gapMethod === 'choose' ? 'gaps-choice' : mode, gapAnswer: '', graded: false };
+    question = questionFor(session, activeList.words, progress);
+    const { entry, mode, gapMethod } = question;
+    reviewingQuestion = question.graded;
     const current = modeById(mode);
     const gaps = mode === 'gaps' ? gapParts(entry) : null;
     const prompt = { meaning: 'Which word fits this meaning?', choice: 'Which spelling looks right?', gaps: 'Make the word complete.', spell: 'You’ve got the whole word.' }[mode];
     const instruction = { meaning: entry.definition, choice: 'Listen carefully, then choose the correct spelling.', gaps: gapMethod === 'choose' ? 'Listen, then find the letters that complete the word.' : 'Listen, then type the missing letters.', spell: 'Listen, then type what you hear.' }[mode];
     let answerArea;
     if (mode === 'meaning' || mode === 'choice') {
-      answerArea = `<div class="answer-options" role="group" aria-label="Answer choices">${choices(activeList.words, entry, mode).map((choice, i) => `<button class="answer-option" data-answer="${choice}"><span class="option-number" aria-hidden="true">${String.fromCharCode(65 + i)}</span><span>${choice}</span><span class="option-result" aria-hidden="true"></span></button>`).join('')}</div>`;
+      answerArea = `<div class="answer-options" role="group" aria-label="Answer choices">${question.options.map((choice, i) => `<button class="answer-option" data-answer="${choice}"><span class="option-number" aria-hidden="true">${String.fromCharCode(65 + i)}</span><span>${choice}</span><span class="option-result" aria-hidden="true"></span></button>`).join('')}</div>`;
     } else {
       answerArea = `<form id="answer-form" autocomplete="off">
-        ${gaps ? gapMarkup(entry, gapMethod)
+        ${gaps ? gapMarkup(entry, gapMethod, question.gapOptions)
           : '<label class="input-label" for="spelling-input">Your spelling</label><input id="spelling-input" class="spell-input" type="text" maxlength="40" placeholder="Type the word here…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" required aria-describedby="input-help"><p class="fine-print" id="input-help">Take your time. Capital letters are okay.</p>'}
         <button class="primary full" type="submit" id="submit-answer" disabled>Check my spelling <span aria-hidden="true">→</span></button></form>`;
     }
-    setView('quiz', `<div class="quiz-topline"><button class="text-button" id="end-practice">← Finish for now</button><span>${session.review ? 'TRICKY WORD PRACTICE' : session.mode === 'adaptive' ? 'YOUR PERSONAL PRACTICE' : current.title.toUpperCase()}</span></div>
+    setView('quiz', `<div class="quiz-topline"><button class="text-button" id="end-practice">← ${session.finished ? 'Back to results' : 'Finish for now'}</button><span>${session.review ? 'TRICKY WORD PRACTICE' : session.mode === 'adaptive' ? 'YOUR PERSONAL PRACTICE' : current.title.toUpperCase()}</span></div>
       <div class="quiz-layout"><section class="quiz-card"><div class="question-top"><span class="pill">${current.icon} / ${current.short}</span><span>Question <strong>${session.index + 1}</strong> of ${session.queue.length}</span></div>
-        <div class="session-track" role="progressbar" aria-label="Session progress" aria-valuemin="0" aria-valuemax="${session.queue.length}" aria-valuenow="${session.index}"><span style="width:${session.index / session.queue.length * 100}%"></span></div>
+        <div class="session-track" role="progressbar" aria-label="Session progress" aria-valuemin="0" aria-valuemax="${session.queue.length}" aria-valuenow="${session.answers.length}"><span style="width:${session.answers.length / session.queue.length * 100}%"></span></div>
+        <div class="quiz-controls"><button type="button" class="text-button" id="previous-question" ${session.index === 0 ? 'disabled' : ''}>← Previous question</button><label class="auto-advance-toggle"><input id="auto-advance-toggle" type="checkbox" ${settings.autoAdvance ? 'checked' : ''}> Auto-advance correct answers</label></div>
+        ${reviewingQuestion ? `<div class="history-note"><p>Previously answered. Reviewing won’t change your score.</p>${!session.finished && session.answers.length < session.queue.length ? '<button class="text-button" id="return-current">Back to current question →</button>' : ''}</div>` : ''}
         <h1 tabindex="-1">${prompt}</h1><p class="question-instruction ${mode === 'meaning' ? 'definition' : ''}">${escapeHtml(instruction)}</p>
         <button class="listen-button" id="listen-button">${speakerIcon}<span>${mode === 'meaning' ? 'Read the clue' : 'Listen to the word'}</span></button><p class="speech-status" id="speech-status" role="status"></p>
         ${answerArea}<div id="feedback" role="status" aria-live="polite" aria-atomic="true"></div><div class="question-bottom"><button class="text-button" id="skip-answer">I’m not sure yet</button><span>It’s okay to give it a try.</span></div>
       </section><aside class="quiz-aside"><div class="small-art" aria-hidden="true">a<span>✦</span></div><span class="eyebrow">PRACTICE MAKES PROGRESS</span><h2>Every try<br>counts.</h2><p>A mistake is just a word asking for a little more practice.</p><div class="session-score"><strong>${session.answers.filter(answer => answer.correct).length}</strong><span>correct so far</span></div><div class="stage-path">${MODES.map(stage => `<div class="${stage.id === mode ? 'current-stage' : ''}"><span>${stage.icon}</span>${stage.short}${stage.id === mode ? '<small>YOU ARE HERE</small>' : ''}</div>`).join('')}</div></aside></div>`);
-    $('#listen-button').addEventListener('click', () => speak(mode === 'meaning' ? entry.definition : entry.word));
+    $('#listen-button').addEventListener('click', () => { cancelAutoAdvance(); speak(mode === 'meaning' ? entry.definition : entry.word); });
+    $('#previous-question').addEventListener('click', () => navigateQuestion(session.index - 1));
+    $('#return-current')?.addEventListener('click', () => navigateQuestion(session.answers.length));
+    $('#auto-advance-toggle').addEventListener('change', event => {
+      settings.autoAdvance = event.target.checked;
+      saveSettings();
+      scheduleAutoAdvance();
+    });
     $('#end-practice').addEventListener('click', () => showSummary());
     $('#skip-answer').addEventListener('click', () => grade(''));
     app.querySelectorAll('[data-answer]').forEach(button => button.addEventListener('click', () => grade(button.dataset.answer)));
@@ -199,8 +211,15 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
         disposeGapChoices = mountGapChoices(app, letters => {
           question.gapAnswer = letters;
           $('#submit-answer').disabled = !letters;
+        }, question.gapAnswer);
+      } else {
+        $('#spelling-input').value = question.draft;
+        $('#submit-answer').disabled = !question.draft.trim();
+        $('#spelling-input').addEventListener('input', event => {
+          question.draft = event.target.value;
+          $('#submit-answer').disabled = !question.draft.trim();
         });
-      } else $('#spelling-input').addEventListener('input', event => { $('#submit-answer').disabled = !event.target.value.trim(); });
+      }
       $('#answer-form').addEventListener('submit', event => {
         event.preventDefault();
         const typed = gapMethod === 'choose' ? question.gapAnswer : $('#spelling-input').value.trim();
@@ -208,20 +227,26 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
         grade(gaps ? gaps.before + typed.toLowerCase() + gaps.after : typed);
       });
     }
+    if (question.graded) renderFeedback();
     focusTitle();
-    if (mode !== 'meaning') speak(entry.word);
+    if (!question.graded && mode !== 'meaning') speak(entry.word);
   }
   function grade(answer) {
     if (!question || question.graded || view !== 'quiz' || session.listId !== activeList.id) return;
-    question.graded = true;
-    const { entry, mode, answerMode } = question;
-    progress = recordAnswer(progress, entry.word, answerMode, answer);
-    const correct = progress.words[entry.word].lastCorrect;
-    session.answers.push({ word: entry.word, correct, mode });
+    const updated = answerQuestion(session, progress, answer);
+    if (!updated) return;
+    progress = updated;
+    save();
+    renderFeedback();
+    $('#next-question').focus({ preventScroll: true });
+    $('#feedback').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    scheduleAutoAdvance();
+  }
+  function renderFeedback() {
+    const { entry, answerMode, answer, correct, gapUnlocked } = question;
     $('.session-score strong').textContent = session.answers.filter(item => item.correct).length;
     $('.session-track').setAttribute('aria-valuenow', session.answers.length);
     $('.session-track > span').style.width = `${session.answers.length / session.queue.length * 100}%`;
-    save();
     app.querySelectorAll('[data-answer]').forEach(button => {
       button.disabled = true;
       if (button.dataset.answer === entry.word) { button.classList.add('correct'); button.querySelector('.option-result').textContent = '✓'; }
@@ -239,25 +264,59 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
     const feedback = $('#feedback');
     feedback.className = `feedback ${correct ? 'positive' : 'keep-going'}`;
     feedback.innerHTML = `<div class="feedback-heading"><span aria-hidden="true">${correct ? '✓' : '↗'}</span><strong>${correct ? 'That’s it. Nicely done!' : answer ? 'Not quite. Let’s learn this one.' : 'Let’s learn this one together.'}</strong></div>
-      <div class="correct-word">${entry.word}</div><p>${escapeHtml(entry.hint)}</p><p class="word-example">${escapeHtml(entry.sentence)}</p>${answerMode === 'gaps-choice' && correct ? `<p class="tile-milestone">${gapInputMethod(progress.words[entry.word]) === 'type' ? 'Next time, you’ll type the missing letters for this word!' : 'One more correct tile answer for this word unlocks typing.'}</p>` : ''}<button class="primary full" id="next-question">${session.index + 1 < session.queue.length ? 'Next word' : 'See how you did'} <span aria-hidden="true">→</span></button>`;
-    $('#next-question').addEventListener('click', () => {
-      session.index++;
-      if (session.index >= session.queue.length) showSummary(); else showQuestion();
+      <p class="submitted-answer">Your answer: <strong>${answer ? escapeHtml(answer) : 'I’m not sure yet'}</strong></p><div class="correct-word">${entry.word}</div><p>${escapeHtml(entry.hint)}</p><p class="word-example">${escapeHtml(entry.sentence)}</p>${answerMode === 'gaps-choice' && correct ? `<p class="tile-milestone">${gapUnlocked ? 'Next time, you’ll type the missing letters for this word!' : 'One more correct tile answer for this word unlocks typing.'}</p>` : ''}<button class="primary full" id="next-question">${session.index + 1 < (session.finished ? session.answers.length : session.queue.length) ? 'Next question' : session.finished ? 'Back to results' : 'See how you did'} <span aria-hidden="true">→</span></button><p id="auto-advance-status" class="auto-advance-status" role="status" hidden></p><button type="button" class="text-button" id="pause-auto-advance" hidden>Stay on this question</button>`;
+    $('#next-question').addEventListener('click', advanceQuestion);
+    $('#pause-auto-advance').addEventListener('click', () => {
+      cancelAutoAdvance();
+      $('#auto-advance-status').textContent = 'Paused. Choose Next when you’re ready.';
+      $('#auto-advance-status').hidden = false;
+      $('#next-question').focus({ preventScroll: true });
     });
-    $('#next-question').focus({ preventScroll: true });
-    feedback.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  function navigateQuestion(index) {
+    cancelAutoAdvance();
+    if (session && goToQuestion(session, index)) showQuestion();
+  }
+  function advanceQuestion() {
+    cancelAutoAdvance();
+    if (view !== 'quiz' || !question?.graded) return;
+    const limit = session.finished ? session.answers.length : session.queue.length;
+    if (session.index + 1 >= limit) showSummary();
+    else navigateQuestion(session.index + 1);
+  }
+  function cancelAutoAdvance() {
+    advanceTimer.stop();
+    if ($('#auto-advance-status')) $('#auto-advance-status').hidden = true;
+    if ($('#pause-auto-advance')) $('#pause-auto-advance').hidden = true;
+  }
+  function scheduleAutoAdvance() {
+    cancelAutoAdvance();
+    if (view !== 'quiz' || document.hidden || $('#settings-dialog').open
+      || !canAutoAdvance(session, question, settings.autoAdvance, reviewingQuestion)) return;
+    const expectedSession = session;
+    const expectedQuestion = question;
+    $('#auto-advance-status').textContent = session.index + 1 < session.queue.length ? 'Next question in 2 seconds.' : 'Your results will open in 2 seconds.';
+    $('#auto-advance-status').hidden = false;
+    $('#pause-auto-advance').hidden = false;
+    advanceTimer.start(() => {
+      if (session === expectedSession && question === expectedQuestion && view === 'quiz'
+        && !document.hidden && !$('#settings-dialog').open
+        && canAutoAdvance(session, question, settings.autoAdvance, reviewingQuestion)) advanceQuestion();
+    });
   }
   function showSummary() {
     if (!session || session.answers.length === 0) { showHome(); focusTitle(); return; }
     const answers = session.answers;
     const correct = answers.filter(answer => answer.correct).length;
     const missed = [...new Set(answers.filter(answer => !answer.correct).map(answer => answer.word))];
-    progress = { ...progress, sessions: progress.sessions + 1 }; save();
-    session = null; question = null;
+    const finished = finishSession(session, progress);
+    if (finished !== progress) { progress = finished; save(); }
+    question = null;
     setView('summary', `<section class="summary-card"><div class="celebration" aria-hidden="true">✦</div><span class="eyebrow">LOOK AT YOU GO</span><h1 tabindex="-1">${correct === answers.length ? 'A lovely little victory.' : 'That’s progress.'}</h1><p>You showed up. You practiced. Your words are getting stronger.</p><div class="summary-score"><strong>${correct}<span> / ${answers.length}</span></strong><span>answers correct · ${Math.round(correct / answers.length * 100)}%</span></div>
       ${missed.length ? `<div class="review-box"><h2>A little more love for these words</h2><div class="word-chips">${missed.map(word => `<span>${word}</span>`).join('')}</div><p>We’ll bring back helpful hints and give these words another turn.</p></div>` : '<div class="review-box"><h2>Keep that confidence growing.</h2><p>More practice helps these words stick. Try spelling them all the way out when you’re ready.</p></div>'}
-      <div class="button-row"><button class="primary" id="summary-practice">${missed.length ? 'Retry these words' : 'Keep practicing'} <span aria-hidden="true">→</span></button><button class="secondary" id="summary-home">Back to home</button></div></section>`);
+      <div class="button-row"><button class="primary" id="summary-practice">${missed.length ? 'Retry these words' : 'Keep practicing'} <span aria-hidden="true">→</span></button><button class="secondary" id="summary-review">Review answers</button><button class="secondary" id="summary-home">Back to home</button></div></section>`);
     $('#summary-practice').addEventListener('click', () => missed.length ? startSession('adaptive', true, missed) : startSession());
+    $('#summary-review').addEventListener('click', () => navigateQuestion(0));
     $('#summary-home').addEventListener('click', () => { showHome(); focusTitle(); });
     focusTitle();
   }
@@ -287,6 +346,7 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
     const fresh = records.load(activeList);
     if (!fresh.error) { progress = fresh.progress; if (view === 'home') showHome(); else if (view === 'progress') showProgress(); }
   });
-  window.addEventListener('pagehide', stopSpeech);
+  window.addEventListener('pagehide', () => { cancelAutoAdvance(); stopSpeech(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) cancelAutoAdvance(); });
   showHome();
 }
