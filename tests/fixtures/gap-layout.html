@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local gap layout checks</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+  <main class="shell">
+    <h1>Local gap layout checks</h1>
+    <p>All published words, in both gap modes. Answers are filled for layout inspection only.</p>
+    <div id="examples" class="quiz-layout"></div>
+  </main>
+  <script type="module">
+    import { LISTS } from '../../src/lists.js';
+    import { gapMarkup } from '../../src/gap-exercise.js';
+    import { gapParts } from '../../src/engine.js';
+    const examples = document.querySelector('#examples');
+    for (const list of LISTS) for (const entry of list.words) for (const method of ['choose', 'type']) {
+      const card = document.createElement('section');
+      card.className = 'quiz-card';
+      card.dataset.word = entry.word;
+      card.dataset.method = method;
+      const title = document.createElement('h2');
+      title.textContent = `${entry.word} · ${method}`;
+      card.append(title);
+      card.insertAdjacentHTML('beforeend', gapMarkup(entry, method));
+      const prefix = `${list.id}-${entry.word}-${method}-`;
+      for (const element of card.querySelectorAll('[id], [for], [aria-describedby], [aria-labelledby]')) {
+        for (const attribute of ['id', 'for', 'aria-describedby', 'aria-labelledby']) {
+          if (element.hasAttribute(attribute)) element.setAttribute(attribute, prefix + element.getAttribute(attribute));
+        }
+      }
+      const control = card.querySelector('.gap-drop, .gap-input');
+      if (method === 'type') control.value = gapParts(entry).missing;
+      else control.textContent = gapParts(entry).missing;
+      const aside = document.createElement('div');
+      aside.className = 'quiz-aside';
+      examples.append(card, aside);
+    }
+  </script>
+</body>
+</html>

@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#6550a2">
-    <meta name="description" content="A little practice, a lot of progress. Learn this week's spelling words with spoken prompts and practice that grows with you.">
+    <meta name="description" content="A little practice, a lot of progress. Choose a vocabulary list and learn its words with spoken prompts and practice that grows with you.">
     <title>Word Workshop · Spelling practice</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="./styles.css">
-    <script type="module" src="./src/app.js"></script>
+    <script type="module" src="./src/main.js"></script>
   </head>
   <body>
     <div class="shell">
@@ -30,7 +30,7 @@
       <p id="settings-speech-status" role="status"></p>
     </dialog>
     <dialog id="reset-dialog" aria-labelledby="reset-title">
-      <h2 id="reset-title">Start fresh?</h2><p>This erases the spelling results saved in this browser. It cannot be undone.</p>
+      <h2 id="reset-title">Start fresh?</h2><p>This erases the results for <strong id="reset-list-name"></strong> in this browser. Other lists keep their progress. It cannot be undone.</p>
       <div class="button-row"><button class="secondary" id="cancel-reset">Keep my progress</button><button class="danger" id="confirm-reset">Erase progress</button></div>
     </dialog>
     <noscript><p class="notice">Please enable JavaScript to use the spelling activities and save your progress.</p></noscript>

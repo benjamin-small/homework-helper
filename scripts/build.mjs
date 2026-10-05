@@ -1,4 +1,7 @@
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { LISTS } from '../src/lists.js';
+import { validateCatalog } from '../src/list-schema.js';
+validateCatalog(LISTS);
 const root = new URL('../', import.meta.url);
 await rm(new URL('dist/', root), { recursive: true, force: true });
 await mkdir(new URL('dist/', root), { recursive: true });

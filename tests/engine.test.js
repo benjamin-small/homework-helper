@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { WORDS } from '../src/words.js';
+import week7 from '../src/lists/week-7.js';
+const WORDS = week7.words;
 import { MODES, choices, emptyProgress, gapChoices, gapInputMethod, gapParts, isCorrect, makeQueue, mastered, needsReview, nextMode, priority, recordAnswer, totals } from '../src/engine.js';
 import { gapMarkup } from '../src/gap-exercise.js';
-import { STORAGE_KEY, readProgress, validProgress, writeProgress } from '../src/storage.js';
+import { progressKey, readProgress, validProgress, writeProgress } from '../src/storage.js';
 
 test('printed list has exactly 25 words and the mechanization bonus', () => {
   assert.equal(WORDS.length, 26);
@@ -19,7 +20,7 @@ test('each gap reconstructs its word and distractors never include the answer', 
     assert.ok(missing.length > 0 && missing.length < entry.word.length);
     assert.equal(new Set([entry.word, ...entry.misspellings]).size, 3);
     for (const mode of ['meaning', 'choice']) {
-      const options = choices(entry, mode);
+      const options = choices(WORDS, entry, mode);
       assert.equal(options.length, 3);
       assert.equal(options.filter(option => option === entry.word).length, 1);
       assert.equal(new Set(options).size, 3);
@@ -39,7 +40,7 @@ test('adaptive stages lead to full spelling and two unassisted successes', () =>
   assert.equal(mastered(progress.words.machine), false);
   progress = recordAnswer(progress, 'machine', 'spell', 'machine');
   assert.equal(mastered(progress.words.machine), true);
-  assert.equal(totals(progress).mastered, 1);
+  assert.equal(totals(WORDS, progress).mastered, 1);
 });
 test('a failed full spelling restores support and requires a new spelling streak', () => {
   let progress = emptyProgress();
@@ -62,7 +63,7 @@ test('updates do not mutate prior state and retain separate mode results', () =>
   assert.equal(twice.words.industry.modes.meaning.correct, 1);
   assert.equal(twice.words.industry.modes.choice.correct, 0);
   assert.equal(twice.words.industry.lastAt, 200);
-  assert.deepEqual(totals(twice), { attempts: 2, correct: 1, accuracy: 50, practiced: 1, mastered: 0, review: 1 });
+  assert.deepEqual(totals(WORDS, twice), { attempts: 2, correct: 1, accuracy: 50, practiced: 1, mastered: 0, review: 1 });
 });
 test('a supported-mode miss cannot regain mastery without new full spelling', () => {
   let progress = emptyProgress();
@@ -79,37 +80,37 @@ test('repeat quizzes prioritize misses, are bounded, and honor bonus choice', ()
   let progress = recordAnswer(emptyProgress(), 'machine', 'choice', 'mashine');
   progress = recordAnswer(progress, 'mechanization', 'choice', 'mecanization');
   assert.ok(priority(progress.words.machine) > priority(undefined));
-  const queue = makeQueue(progress, { random: () => 0.5 });
+  const queue = makeQueue(WORDS, progress, { random: () => 0.5 });
   assert.equal(queue[0], 'machine');
   assert.equal(queue[1], 'mechanization');
   assert.equal(queue.length, 12);
   assert.equal(new Set(queue).size, 12);
-  assert.deepEqual(makeQueue(progress, { review: true, includeBonus: false }), ['machine']);
-  assert.deepEqual(makeQueue(emptyProgress(), { review: true }), []);
-  assert.equal(makeQueue(progress, { count: 40, includeBonus: false }).length, 25);
+  assert.deepEqual(makeQueue(WORDS, progress, { review: true, includeBonus: false }), ['machine']);
+  assert.deepEqual(makeQueue(WORDS, emptyProgress(), { review: true }), []);
+  assert.equal(makeQueue(WORDS, progress, { count: 40, includeBonus: false }).length, 25);
 });
 test('persisted state round trips and unsupported or malformed state recovers', () => {
   const data = new Map();
   const storage = { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
   const progress = recordAnswer(emptyProgress(), 'resource', 'spell', 'resource');
-  assert.ok(validProgress(progress));
-  assert.equal(writeProgress(storage, progress), true);
-  assert.deepEqual(readProgress(storage).progress, progress);
+  assert.ok(validProgress(progress, week7));
+  assert.equal(writeProgress(storage, week7, progress), true);
+  assert.deepEqual(readProgress(storage, week7).progress, progress);
   for (const malformed of ['broken', 'null', '{}', '{"version":2}', '{"version":1,"sessions":0,"words":[]}']) {
-    data.set(STORAGE_KEY, malformed);
-    assert.ok(readProgress(storage).error);
-    assert.deepEqual(readProgress(storage).progress, emptyProgress());
+    data.set(progressKey(week7), malformed);
+    assert.ok(readProgress(storage, week7).error);
+    assert.deepEqual(readProgress(storage, week7).progress, emptyProgress());
   }
   const bad = structuredClone(progress);
   bad.words.resource.correct = 500;
-  assert.equal(validProgress(bad), false);
+  assert.equal(validProgress(bad, week7), false);
 });
 test('blocked storage does not stop practice and reports failed persistence', () => {
   const blocked = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('quota'); } };
-  assert.ok(readProgress(blocked).error);
-  assert.equal(writeProgress(blocked, emptyProgress()), false);
-  assert.ok(readProgress(undefined).error);
-  assert.equal(writeProgress(undefined, emptyProgress()), false);
+  assert.ok(readProgress(blocked, week7).error);
+  assert.equal(writeProgress(blocked, week7, emptyProgress()), false);
+  assert.ok(readProgress(undefined, week7).error);
+  assert.equal(writeProgress(undefined, week7, emptyProgress()), false);
 });
 test('every gap offers three distinct options containing exactly one correct tile', () => {
   for (const entry of WORDS) {
@@ -133,7 +134,7 @@ test('two consecutive tile successes unlock typed gaps without skipping typing',
   assert.equal(gapInputMethod(progress.words.machine), 'type');
   assert.equal(nextMode(progress.words.machine), 'gaps');
   assert.equal(progress.words.machine.modes.gaps, undefined);
-  assert.ok(validProgress(progress));
+  assert.ok(validProgress(progress, week7));
   assert.equal(mastered(progress.words.machine), false);
   progress = recordAnswer(progress, 'machine', 'gaps', 'machine');
   assert.equal(nextMode(progress.words.machine), 'spell');
@@ -141,7 +142,7 @@ test('two consecutive tile successes unlock typed gaps without skipping typing',
 });
 test('existing saved typed-gap work survives the upgrade and stays unlocked', () => {
   const progress = recordAnswer(emptyProgress(), 'industry', 'gaps', 'industry');
-  assert.ok(validProgress(progress));
+  assert.ok(validProgress(progress, week7));
   assert.equal(gapInputMethod(progress.words.industry), 'type');
   const failed = recordAnswer(progress, 'industry', 'gaps', 'indestry');
   assert.equal(gapInputMethod(failed.words.industry), 'type');
