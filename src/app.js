@@ -122,7 +122,7 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
     view = name;
     $('#progress-button').textContent = name === 'quiz' ? session.finished ? 'Results' : 'Finish practice' : 'My progress';
     stopSpeech();
-    app.innerHTML = (name === 'home' ? '' : `<p class="list-context">${escapeHtml(activeList.title)}</p>`) + html;
+    app.innerHTML = (name === 'home' || name === 'quiz' ? '' : `<p class="list-context">${escapeHtml(activeList.title)}</p>`) + html;
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
   function focusTitle() { app.querySelector('h1')?.focus({ preventScroll: true }); }
@@ -193,7 +193,7 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
           : '<label class="input-label" for="spelling-input">Your spelling</label><input id="spelling-input" class="spell-input" type="text" maxlength="40" placeholder="Type the word here…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" required aria-describedby="input-help"><p class="fine-print" id="input-help">Take your time. Capital letters are okay.</p>'}
         <button class="primary full" type="submit" id="submit-answer" disabled>Check my spelling <span aria-hidden="true">→</span></button></form>`;
     }
-    setView('quiz', `<button type="button" class="previous-edge" id="previous-edge" aria-label="Go to previous question" title="Previous question" ${session.index === 0 ? 'hidden' : ''}><span aria-hidden="true">‹</span></button><div class="quiz-topline"><button class="text-button" id="end-practice">← ${session.finished ? 'Back to results' : 'Finish for now'}</button><span>${session.review ? 'TRICKY WORD PRACTICE' : session.mode === 'adaptive' ? 'YOUR PERSONAL PRACTICE' : current.title.toUpperCase()}</span></div>
+    setView('quiz', `<button type="button" class="previous-edge" id="previous-edge" aria-label="Go to previous question" title="Previous question" ${session.index === 0 ? 'hidden' : ''}><span aria-hidden="true">‹</span></button><div class="quiz-topline practice-header"><button class="text-button" id="end-practice">← ${session.finished ? 'Back to results' : 'Finish for now'}</button><p class="practice-list-title">${escapeHtml(activeList.title)}</p><span class="practice-activity">${session.review ? 'TRICKY WORD PRACTICE' : session.mode === 'adaptive' ? 'YOUR PERSONAL PRACTICE' : current.title.toUpperCase()}</span></div>
       <div class="quiz-layout"><section class="quiz-card"><div class="question-top"><span class="pill">${current.icon} / ${current.short}</span><span>Question <strong>${session.index + 1}</strong> of ${session.queue.length}</span></div>
         <div class="session-track" role="progressbar" aria-label="Session progress" aria-valuemin="0" aria-valuemax="${session.queue.length}" aria-valuenow="${session.answers.length}"><span style="width:${session.answers.length / session.queue.length * 100}%"></span></div>
         <div class="quiz-controls"><button type="button" class="text-button" id="previous-question" ${session.index === 0 ? 'disabled' : ''}>← Previous question</button><label class="auto-advance-toggle"><input id="auto-advance-toggle" type="checkbox" ${settings.autoAdvance ? 'checked' : ''}> Auto-advance correct answers</label></div>

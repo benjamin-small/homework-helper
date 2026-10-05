@@ -1,4 +1,8 @@
 @charset "UTF-8";
+.quiz-topline.practice-header{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;max-width:1000px;margin:12px auto 10px}
+.practice-header>.text-button{min-height:44px}.practice-list-title{margin:0;min-width:0;font-size:12px;font-weight:650;line-height:1.4;color:var(--purple-dark);text-align:center;overflow-wrap:anywhere}
+.quiz-card .session-track{margin:12px 0 10px}.quiz-card .quiz-controls{margin-bottom:12px}
+@media(max-width:760px){.quiz-topline.practice-header{grid-template-columns:auto minmax(0,1fr);gap:10px;margin:8px auto 8px}.practice-list-title{text-align:right;font-size:11px}.practice-header>.practice-activity{display:none}}
 body:has(.question-sliding){overflow-x:clip}
 .question-transition-layer{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:5}
 .quiz-card{touch-action:pan-y pinch-zoom}
