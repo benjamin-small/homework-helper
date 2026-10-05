@@ -200,10 +200,16 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
         <p class="swipe-hint" ${session.index === 0 ? 'hidden' : ''}>Swipe right on the card to go back.</p>
         ${reviewingQuestion ? `<div class="history-note"><p>Previously answered. Reviewing won’t change your score.</p>${!session.finished && session.answers.length < session.queue.length ? '<button class="text-button" id="return-current">Back to current question →</button>' : ''}</div>` : ''}
         <h1 tabindex="-1">${prompt}</h1><p class="question-instruction ${mode === 'meaning' ? 'definition' : ''}">${escapeHtml(instruction)}</p>
-        <button class="listen-button" id="listen-button">${speakerIcon}<span>${mode === 'meaning' ? 'Read the clue' : 'Listen to the word'}</span></button><p class="speech-status" id="speech-status" role="status"></p>
+        <div class="listen-controls"><button class="listen-button" id="listen-button">${speakerIcon}<span>${mode === 'meaning' ? 'Read the clue' : 'Listen to the word'}</span></button>${mode === 'meaning' ? `<label class="auto-advance-toggle"><input id="auto-read-clue-toggle" type="checkbox" ${settings.autoReadClue ? 'checked' : ''}> Auto-read the clue</label>` : ''}</div><p class="speech-status" id="speech-status" role="status"></p>
         ${answerArea}<div id="feedback" role="status" aria-live="polite" aria-atomic="true"></div><div class="question-bottom"><button class="text-button" id="skip-answer">I’m not sure yet</button><span>It’s okay to give it a try.</span></div>
       </section><aside class="quiz-aside"><div class="small-art" aria-hidden="true">a<span>✦</span></div><span class="eyebrow">PRACTICE MAKES PROGRESS</span><h2>Every try<br>counts.</h2><p>A mistake is just a word asking for a little more practice.</p><div class="session-score"><strong>${session.answers.filter(answer => answer.correct).length}</strong><span>correct so far</span></div><div class="stage-path">${MODES.map(stage => `<div class="${stage.id === mode ? 'current-stage' : ''}"><span>${stage.icon}</span>${stage.short}${stage.id === mode ? '<small>YOU ARE HERE</small>' : ''}</div>`).join('')}</div></aside></div>`);
     $('#listen-button').addEventListener('click', () => { cancelAutoAdvance(); speak(mode === 'meaning' ? entry.definition : entry.word); });
+    $('#auto-read-clue-toggle')?.addEventListener('change', event => {
+      settings.autoReadClue = event.target.checked;
+      saveSettings();
+      if (!settings.autoReadClue) { stopSpeech(); speechStatus(''); }
+      else if (!question.graded) speak(entry.definition);
+    });
     $('#previous-question').addEventListener('click', () => navigateQuestion(session.index - 1));
     $('#previous-edge').addEventListener('click', () => navigateQuestion(session.index - 1));
     disposeQuestionSwipes = mountQuestionSwipes($('.quiz-card'), direction => {
@@ -242,7 +248,7 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
     }
     if (question.graded) renderFeedback();
     focusTitle();
-    if (!question.graded && mode !== 'meaning') speak(entry.word);
+    if (!question.graded && (mode !== 'meaning' || settings.autoReadClue)) speak(mode === 'meaning' ? entry.definition : entry.word);
   }
   function grade(answer) {
     if (!question || question.graded || view !== 'quiz' || session.listId !== activeList.id) return;

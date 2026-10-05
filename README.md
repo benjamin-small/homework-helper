@@ -33,6 +33,8 @@ Use **Previous question**, click the left edge of the page on larger screens, or
 
 **Auto-advance correct answers** is an optional checkbox on the question card, on by default and remembered across lists. This update applies the new default once to existing preferences; switching it off afterward stays off. When enabled, a new correct answer advances after 0.8 seconds (or opens results after the last question). Missed and skipped answers stay on screen. **Stay on this question**, turning the toggle off, navigating back, listening again, opening sound settings, or hiding/leaving the page cancels a pending advance. Reviewing old answers never starts the timer.
 
+**Auto-read the clue** appears beside **Read the clue** on meaning questions. It is off by default and remembered across lists and page reloads. Enabling it reads the current unanswered clue immediately and each new unanswered clue as it appears. Turning it off stops the reading; revisiting answered questions stays quiet until you choose **Read the clue**.
+
 Adaptive sessions contain up to 12 distinct words. A word advances through meaning, spelling choice, gap tiles, and typed missing letters before full spelling. Tile and typed results are tracked separately, and existing typed-gap progress is preserved. A full-spelling miss returns to missing-letter practice. Two consecutive correct full-spelling answers make a word “feeling solid.” Missed words have greater selection weight; the dedicated tricky-word activity includes only previously missed words that are not solid yet. A session’s retry button practices exactly the words missed in that session with appropriate support. No machine learning model is involved: adaptation is a transparent set of rules.
 
 ## Words and privacy

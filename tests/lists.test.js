@@ -127,6 +127,7 @@ test('settings default to the newest list without losing per-list or legacy pref
   const settings = readSettings(storage, LISTS, DEFAULT_LIST_ID);
   assert.equal(settings.voice, 'device-voice');
   assert.equal(settings.rate, 0.7);
+  assert.equal(settings.autoReadClue, false);
   assert.equal(settings.autoAdvance, true);
   assert.equal(settings.selectedListId, week8.id);
   assert.equal(settings.bonusByList[week7.id], false);
@@ -134,6 +135,7 @@ test('settings default to the newest list without losing per-list or legacy pref
   settings.selectedListId = week8.id;
   settings.bonusByList[week8.id] = false;
   settings.autoAdvance = false;
+  settings.autoReadClue = true;
   assert.equal(writeSettings(storage, settings), true);
   assert.deepEqual(readSettings(storage, LISTS), settings);
   settings.selectedListId = week7.id;
@@ -143,10 +145,12 @@ test('settings default to the newest list without losing per-list or legacy pref
   assert.deepEqual(reopened.bonusByList, settings.bonusByList);
   assert.equal(reopened.voice, 'device-voice');
   assert.equal(reopened.autoAdvance, false);
+  assert.equal(reopened.autoReadClue, true);
   // A newly added non-weekly list becomes the default just like a new week.
   assert.equal(readSettings(storage, [sample, ...LISTS]).selectedListId, sample.id);
   storage.setItem(SETTINGS_KEY, JSON.stringify({ autoAdvance: false }));
   assert.equal(readSettings(storage, LISTS).autoAdvance, true);
+  assert.equal(readSettings(storage, LISTS).autoReadClue, false);
   storage.setItem(SETTINGS_KEY, 'broken');
   assert.equal(readSettings(storage, LISTS).rate, 0.85);
   assert.equal(readSettings(storage, LISTS).autoAdvance, true);

@@ -9,6 +9,7 @@ body:has(.question-sliding){overflow-x:clip}
 @media(max-width:760px){.previous-edge{display:none}.swipe-hint:not([hidden]){display:block}}
 @media(pointer:coarse){.swipe-hint:not([hidden]){display:block}}
 .quiz-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 16px;margin-bottom:18px}
+.listen-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px}
 .quiz-controls>.text-button{min-height:44px}.auto-advance-toggle{display:flex;align-items:center;gap:8px;min-height:44px;font-size:11px;color:var(--muted);cursor:pointer}
 .auto-advance-toggle input{width:18px;height:18px;margin:0;accent-color:var(--purple);flex-shrink:0}
 .history-note{padding:12px 15px;margin-bottom:20px;border-radius:10px;background:var(--lavender);color:var(--purple-dark)}

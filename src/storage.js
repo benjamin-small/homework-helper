@@ -58,6 +58,7 @@ export function readSettings(storage, lists, defaultListId = lists[0].id) {
   return {
     voice: typeof saved?.voice === 'string' ? saved.voice : '',
     rate: [0.7, 0.85, 1].includes(saved?.rate) ? saved.rate : 0.85,
+    autoReadClue: typeof saved?.autoReadClue === 'boolean' ? saved.autoReadClue : false,
     // Apply the faster, enabled default once, then remember the learner's choice.
     autoAdvance: saved?.autoAdvanceDefaultVersion === 2 && typeof saved.autoAdvance === 'boolean' ? saved.autoAdvance : true,
     autoAdvanceDefaultVersion: 2,
