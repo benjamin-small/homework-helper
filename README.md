@@ -16,7 +16,7 @@ npm run dev
 
 Open http://127.0.0.1:4173. Use `npm run check` to run the tests and create `dist/`, containing only public website files. All asset paths are relative, so the site works under a GitHub Pages repository path.
 
-Select a **Practice list** on the home screen. The app remembers your choice, with separate progress, tricky-word practice, bonus preferences, and resets for each list. Finish practice before switching lists. Voice and reading speed are shared. Existing Week 7 results load unchanged.
+Select a **Practice list** on the home screen. Lists appear newest first, and opening or reloading the app selects the most recently added list. You can switch to an older list for the current visit, with separate progress, tricky-word practice, bonus preferences, and resets for each list. Finish practice before switching lists. Voice and reading speed are shared. Existing Week 7 results load unchanged.
 
 For local testing, open http://127.0.0.1:4173/test-lists.html. This adds a three-word sample with an overlapping word, unfamiliar gap letters, a long title, and no bonus words. The preview entrypoint and fixtures live outside `src/` and are excluded from `dist/` and GitHub Pages.
 
@@ -59,7 +59,7 @@ The public website is at [Word Workshop](https://benjamin-small.github.io/homewo
    ```
 
    Lists need at least three words and at least one non-bonus word. Words and spelling choices use lowercase English letters, up to 40 characters. Gaps must reconstruct the word and leave some letters visible. Definitions, hints, and sentences are required. Choose gap groups short enough for the uniform field and check their layout on mobile. Optional `meaningDistractors` names two different words from the same list when random choices could be ambiguous; for example, Week 8 keeps **bravery** and **courage** from competing against each other.
-3. Import and register the module in `src/lists.js`. Catalog order controls the selector; `DEFAULT_LIST_ID` controls the fallback for a new browser or an unavailable saved selection. No quiz engine or storage changes are needed to add a list.
+3. Import and append the module to the registration array in `src/lists.js`. The exported catalog reverses that addition order, so the most recently added list appears first and automatically becomes the default on every page load. This applies to weekly and other custom lists alike; no date or week-number sorting is needed. No quiz engine or storage changes are needed to add a list.
 4. Run `npm run check`. Catalog validation also runs before every build and fails with the list ID and offending content. Verify all four activities, bonus counts, speech, and mobile gaps before publishing.
 
 The app entrypoint calls `startApp(catalog, defaultListId)`; local previews can supply a different catalog without adding test lists to production. The quiz engine accepts the active word collection, and persistence accepts the list identity explicitly. There is no in-browser list editor, import/export, or separate learner-profile system.

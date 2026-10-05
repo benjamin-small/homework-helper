@@ -58,7 +58,8 @@ export function readSettings(storage, lists, defaultListId = lists[0].id) {
   return {
     voice: typeof saved?.voice === 'string' ? saved.voice : '',
     rate: [0.7, 0.85, 1].includes(saved?.rate) ? saved.rate : 0.85,
-    selectedListId: lists.some(list => list.id === saved?.selectedListId) ? saved.selectedListId : defaultId,
+    // Every page load starts with the newest list, even after practicing an older one.
+    selectedListId: defaultId,
     bonusByList: Object.fromEntries(lists.map(list => [list.id,
       typeof saved?.bonusByList?.[list.id] === 'boolean' ? saved.bonusByList[list.id]
         : list.id === LEGACY_LIST_ID && typeof saved?.bonus === 'boolean' ? saved.bonus : true,

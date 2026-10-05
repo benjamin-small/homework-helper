@@ -6,7 +6,8 @@ import { choices, emptyProgress, gapChoices, gapParts, gapInputMethod, makeQueue
 import { createProgressStore, progressKey, readProgress, writeProgress, readSettings, writeSettings, SETTINGS_KEY } from '../src/storage.js';
 import sample from './fixtures/sample-list.js';
 
-const [week7, week8] = LISTS;
+const week7 = LISTS.find(list => list.id === 'industrial-revolution-week-7');
+const week8 = LISTS.find(list => list.id === 'number-the-stars-week-8');
 const memoryStorage = () => {
   const data = new Map();
   return { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
@@ -120,22 +121,27 @@ test('failed writes and malformed data do not discard unsaved work on switches',
   assert.deepEqual(unavailable.load(sample).progress, emptyProgress());
 });
 
-test('settings remember selection and per-list bonuses while migrating old preferences', () => {
+test('settings default to the newest list without losing per-list or legacy preferences', () => {
   const storage = memoryStorage();
   storage.setItem(SETTINGS_KEY, JSON.stringify({ voice: 'device-voice', rate: 0.7, bonus: false }));
   const settings = readSettings(storage, LISTS, DEFAULT_LIST_ID);
   assert.equal(settings.voice, 'device-voice');
   assert.equal(settings.rate, 0.7);
-  assert.equal(settings.selectedListId, week7.id);
+  assert.equal(settings.selectedListId, week8.id);
   assert.equal(settings.bonusByList[week7.id], false);
   assert.equal(settings.bonusByList[week8.id], true);
   settings.selectedListId = week8.id;
   settings.bonusByList[week8.id] = false;
   assert.equal(writeSettings(storage, settings), true);
   assert.deepEqual(readSettings(storage, LISTS), settings);
-  settings.selectedListId = 'removed-list';
+  settings.selectedListId = week7.id;
   writeSettings(storage, settings);
-  assert.equal(readSettings(storage, LISTS).selectedListId, week7.id);
+  const reopened = readSettings(storage, LISTS);
+  assert.equal(reopened.selectedListId, week8.id);
+  assert.deepEqual(reopened.bonusByList, settings.bonusByList);
+  assert.equal(reopened.voice, 'device-voice');
+  // A newly added non-weekly list becomes the default just like a new week.
+  assert.equal(readSettings(storage, [sample, ...LISTS]).selectedListId, sample.id);
   storage.setItem(SETTINGS_KEY, 'broken');
   assert.equal(readSettings(storage, LISTS).rate, 0.85);
   assert.equal(writeSettings(undefined, settings), false);
