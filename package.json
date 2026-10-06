@@ -10,5 +10,5 @@
     "test:coverage": "node --experimental-test-coverage --test --test-coverage-include='src/**/*.js' --test-reporter=spec",
     "check": "node --check src/app.js && node --test && node scripts/build.mjs"
   },
-  "engines": { "node": ">=22" }
+  "engines": { "node": ">=24" }
 }

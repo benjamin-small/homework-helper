@@ -4,7 +4,7 @@ Open an issue before substantial changes so scope and expected behavior are clea
 
 ## Local setup
 
-Use Node.js 22 or later. No dependencies need installing. Run `npm run dev` and open http://127.0.0.1:4173. See [CONFIGURATION.md](CONFIGURATION.md) for the optional local port and browser preferences.
+Use Node.js 24 or later. With nvm, run `nvm install` and `nvm use` to select the version in .nvmrc. No dependencies need installing. Run `npm run dev` and open http://127.0.0.1:4173. See [CONFIGURATION.md](CONFIGURATION.md) for the optional local port and browser preferences.
 
 ## Validation
 

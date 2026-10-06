@@ -4,7 +4,7 @@ Run `npm run check` to check app syntax, run the Node.js tests, validate all reg
 
 ## Measured baseline
 
-Measured on October 5, 2026 with Node.js 22.23.3: **31 tests pass**, with **77.70% line coverage**, **95.22% branch coverage**, and **94.59% function coverage** for the source modules loaded by the tests.
+Measured on October 5, 2026 with Node.js 24.21.0: **31 tests pass**, with **77.70% line coverage**, **95.22% branch coverage**, and **94.59% function coverage** for the source modules loaded by the tests.
 
 Reproduce the native Node.js coverage report with:
 

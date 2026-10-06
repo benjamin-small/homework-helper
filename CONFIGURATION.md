@@ -1,6 +1,6 @@
 # Configuration
 
-Use Node.js 22 or later for development and validation. There are no application packages to install, server accounts, API keys, build-time secrets, or externally loaded fonts.
+Use Node.js 24 or later for development and validation. There are no application packages to install, server accounts, API keys, build-time secrets, or externally loaded fonts.
 
 ## Local preview
 
@@ -20,4 +20,4 @@ Add vocabulary modules in src/lists/ and register them in src/lists.js as docume
 
 ## Deployment
 
-The Pages workflow uses Node.js 24 and publishes only dist/. PR CI validates on Node.js 22, the minimum supported runtime. Set GitHub Settings → Pages → Source to GitHub Actions. Relative asset paths support the repository site at https://benjamin-small.github.io/homework-helper/ without a configurable base URL. GitHub's workflow token handles deployment; no application secret needs provisioning.
+The Pages workflow and PR CI both use Node.js 24, the minimum supported runtime. Pages publishes only dist/. Use the repository's .nvmrc (`nvm use`, or `nvm install` if needed) to select Node.js 24 locally. Set GitHub Settings → Pages → Source to GitHub Actions. Relative asset paths support the repository site at https://benjamin-small.github.io/homework-helper/ without a configurable base URL. GitHub's workflow token handles deployment; no application secret needs provisioning.

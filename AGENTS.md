@@ -1,6 +1,6 @@
 # Agent instructions
 
-Word Workshop is a static spelling tutor. Use Node.js 22 or later; there are no packages to install. Run `npm run dev` for the local preview at http://127.0.0.1:4173.
+Word Workshop is a static spelling tutor. Use Node.js 24 or later; there are no packages to install. Run `npm run dev` for the local preview at http://127.0.0.1:4173.
 
 At session start, run `$poietic-harness-start` when available. Initial user-scope setup is authorized. Preserve project pins; startup does not authorize upgrades. Use Jev by default for suitable bounded structured decisions when available; read its installed SKILL.md and pass the entrypoint and authorized execution access to subagents. Do not delegate without authorization.
 

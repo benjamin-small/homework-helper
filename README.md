@@ -10,7 +10,7 @@ Try [Word Workshop](https://benjamin-small.github.io/homework-helper/). See [con
 
 ## Run locally
 
-Use Node.js 22 or later. There are no packages to install.
+Use Node.js 24 or later. With nvm, run `nvm install` and `nvm use` to select the version in .nvmrc. There are no packages to install.
 
 ```sh
 npm run dev
