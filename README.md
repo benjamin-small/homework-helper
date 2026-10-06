@@ -6,9 +6,11 @@ A small, static spelling tutor with selectable vocabulary lists. It includes **W
 
 **Maturity: Alpha.** Core grading, practice selection, data validation, and persistence have repeatable automated checks. Device speech and real use with a learner still need validation on the target device.
 
+Try [Word Workshop](https://benjamin-small.github.io/homework-helper/). See [contribution guidance](CONTRIBUTING.md), [test scope and measured coverage](TESTING.md), [configuration](CONFIGURATION.md), [release policy](docs/releases.md), and the [MIT license](LICENSE).
+
 ## Run locally
 
-Use Node.js 22 or later. There are no packages to install.
+Use Node.js 24 or later. With nvm, run `nvm install` and `nvm use` to select the version in .nvmrc. There are no packages to install.
 
 ```sh
 npm run dev
