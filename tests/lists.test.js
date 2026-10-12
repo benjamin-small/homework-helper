@@ -8,6 +8,7 @@ import sample from './fixtures/sample-list.js';
 
 const week7 = LISTS.find(list => list.id === 'industrial-revolution-week-7');
 const week8 = LISTS.find(list => list.id === 'number-the-stars-week-8');
+const week9 = LISTS.find(list => list.id === 'number-the-stars-part-2-week-9');
 const memoryStorage = () => {
   const data = new Map();
   return { getItem: key => data.get(key) ?? null, setItem: (key, value) => data.set(key, value) };
@@ -17,6 +18,18 @@ test('Week 8 matches the supplied words in order and has the annihilate bonus', 
   assert.deepEqual(week8.words.filter(word => !word.bonus).map(entry => entry.word), 'occupation resistance refugee soldier uniform curfew rescue courage danger disguise betrayal loyalty friendship journey escape secret suspicious protect sacrifice truth deceive neighbor bravery hardship freedom'.split(' '));
   assert.deepEqual(week8.words.filter(word => word.bonus).map(entry => entry.word), ['annihilate']);
   assert.equal(week8.title, 'Week 8 · Number the Stars');
+});
+
+test('Week 9 matches the supplied words in order and has the handkerchief bonus', () => {
+  assert.deepEqual(week9.words.filter(word => !word.bonus).map(entry => entry.word), 'funeral casket mourner wharf harbor fjord thicket lantern packet pouch scent patrol apprehend tremble exhausted panic determined insist comfort reunion moonlight weave complicated dizzy memorial'.split(' '));
+  assert.deepEqual(week9.words.filter(word => word.bonus).map(entry => entry.word), ['handkerchief']);
+  assert.equal(week9.title, 'Week 9 · Number the Stars — Part 2');
+  assert.equal(DEFAULT_LIST_ID, week9.id);
+  assert.equal(LISTS[0], week9);
+  const withoutBonus = makeQueue(week9.words, emptyProgress(), { count: 40, includeBonus: false });
+  assert.equal(withoutBonus.length, 25);
+  assert.ok(!withoutBonus.includes('handkerchief'));
+  assert.equal(makeQueue(week9.words, emptyProgress(), { count: 40 }).length, 26);
 });
 
 test('all lists validate and every exercise has three distinct choices', () => {
@@ -129,10 +142,11 @@ test('settings default to the newest list without losing per-list or legacy pref
   assert.equal(settings.rate, 0.7);
   assert.equal(settings.autoReadClue, false);
   assert.equal(settings.autoAdvance, true);
-  assert.equal(settings.selectedListId, week8.id);
+  assert.equal(settings.selectedListId, week9.id);
   assert.equal(settings.bonusByList[week7.id], false);
   assert.equal(settings.bonusByList[week8.id], true);
-  settings.selectedListId = week8.id;
+  assert.equal(settings.bonusByList[week9.id], true);
+  settings.selectedListId = week9.id;
   settings.bonusByList[week8.id] = false;
   settings.autoAdvance = false;
   settings.autoReadClue = true;
@@ -141,7 +155,7 @@ test('settings default to the newest list without losing per-list or legacy pref
   settings.selectedListId = week7.id;
   writeSettings(storage, settings);
   const reopened = readSettings(storage, LISTS);
-  assert.equal(reopened.selectedListId, week8.id);
+  assert.equal(reopened.selectedListId, week9.id);
   assert.deepEqual(reopened.bonusByList, settings.bonusByList);
   assert.equal(reopened.voice, 'device-voice');
   assert.equal(reopened.autoAdvance, false);
