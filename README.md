@@ -2,7 +2,7 @@
 
 [![Repository maturity: Alpha](https://raw.githubusercontent.com/benjamin-small/agentic-harness-development/v2026.1001.190334/docs/badges/maturity-alpha.svg)](https://github.com/benjamin-small/agentic-harness-development/blob/v2026.1001.190334/docs/repository-maturity.md#alpha)
 
-A small, static spelling tutor with selectable vocabulary lists. It includes **Week 7 · The Industrial Revolution** (25 words plus **mechanization**) and **Week 8 · Number the Stars** (25 words plus **annihilate**). Built for GitHub Pages, with no server, accounts, API keys, trackers, runtime dependencies, or externally loaded fonts.
+A small, static spelling tutor with selectable vocabulary lists. It includes **Week 7 · The Industrial Revolution** (25 words plus **mechanization**), **Week 8 · Number the Stars** (25 words plus **annihilate**), and **Week 9 · Number the Stars — Part 2** (25 words plus **handkerchief**). Built for GitHub Pages, with no server, accounts, API keys, trackers, runtime dependencies, or externally loaded fonts.
 
 **Maturity: Alpha.** Core grading, practice selection, data validation, and persistence have repeatable automated checks. Device speech and real use with a learner still need validation on the target device.
 
@@ -41,7 +41,7 @@ Adaptive sessions contain up to 12 distinct words. A word advances through meani
 
 ## Words and privacy
 
-`src/lists/` contains the supplied lists with original child-friendly definitions, plausible distractors, bracketed missing-letter patterns, hints, and example sentences. Week 7's printed answer key says **manufacture**; it takes precedence over the handwritten correction. Week 8 uses the supplied “Number the Stars” vocabulary; definitions and sentences are original practice material, not quotations from the book. The downloaded photo, handwriting, learner name, and original test score are not included in the project or deployment. The app starts with no imported grades.
+`src/lists/` contains the supplied lists with original child-friendly definitions, plausible distractors, bracketed missing-letter patterns, hints, and example sentences. Week 7's printed answer key says **manufacture**; it takes precedence over the handwritten correction. Weeks 8 and 9 use the supplied “Number the Stars” vocabulary; definitions and sentences are original practice material, not quotations from the book. The downloaded photo, handwriting, learner name, and original test score are not included in the project or deployment. The app starts with no imported grades.
 
 Results are kept in `localStorage`, scoped to each list and origin, using `word-workshop:<list-id>:v1`. It stores aggregate counts, latest attempt time, per-mode correct counts and streaks, and preferences; it does not store a learner name or typed answers. Identical words in different lists have independent records. No app code sends results anywhere. A different device, browser, localhost port, or deployed origin has its own record. Clearing site data removes progress; private browsing may remove it on close. A visible warning explains when saving is blocked, and unsaved answers remain available while switching lists in the same tab. Reset requires confirmation and affects only the named list’s record.
 
