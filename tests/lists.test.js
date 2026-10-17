@@ -24,8 +24,6 @@ test('Week 9 matches the supplied words in order and has the handkerchief bonus'
   assert.deepEqual(week9.words.filter(word => !word.bonus).map(entry => entry.word), 'funeral casket mourner wharf harbor fjord thicket lantern packet pouch scent patrol apprehend tremble exhausted panic determined insist comfort reunion moonlight weave complicated dizzy memorial'.split(' '));
   assert.deepEqual(week9.words.filter(word => word.bonus).map(entry => entry.word), ['handkerchief']);
   assert.equal(week9.title, 'Week 9 · Number the Stars — Part 2');
-  assert.equal(DEFAULT_LIST_ID, week9.id);
-  assert.equal(LISTS[0], week9);
   const withoutBonus = makeQueue(week9.words, emptyProgress(), { count: 40, includeBonus: false });
   assert.equal(withoutBonus.length, 25);
   assert.ok(!withoutBonus.includes('handkerchief'));
@@ -142,11 +140,11 @@ test('settings default to the newest list without losing per-list or legacy pref
   assert.equal(settings.rate, 0.7);
   assert.equal(settings.autoReadClue, false);
   assert.equal(settings.autoAdvance, true);
-  assert.equal(settings.selectedListId, week9.id);
+  assert.equal(settings.selectedListId, DEFAULT_LIST_ID);
   assert.equal(settings.bonusByList[week7.id], false);
   assert.equal(settings.bonusByList[week8.id], true);
   assert.equal(settings.bonusByList[week9.id], true);
-  settings.selectedListId = week9.id;
+  settings.selectedListId = DEFAULT_LIST_ID;
   settings.bonusByList[week8.id] = false;
   settings.autoAdvance = false;
   settings.autoReadClue = true;
@@ -155,7 +153,7 @@ test('settings default to the newest list without losing per-list or legacy pref
   settings.selectedListId = week7.id;
   writeSettings(storage, settings);
   const reopened = readSettings(storage, LISTS);
-  assert.equal(reopened.selectedListId, week9.id);
+  assert.equal(reopened.selectedListId, DEFAULT_LIST_ID);
   assert.deepEqual(reopened.bonusByList, settings.bonusByList);
   assert.equal(reopened.voice, 'device-voice');
   assert.equal(reopened.autoAdvance, false);
@@ -169,4 +167,17 @@ test('settings default to the newest list without losing per-list or legacy pref
   assert.equal(readSettings(storage, LISTS).rate, 0.85);
   assert.equal(readSettings(storage, LISTS).autoAdvance, true);
   assert.equal(writeSettings(undefined, settings), false);
+});
+
+test('Week 10 preserves the supplied order, bonus, and newest-list default', () => {
+  const list = LISTS.find(list => list.id === 'world-war-i-week-10');
+  assert.equal(list.title, 'Week 10 · World War I');
+  assert.deepEqual(list.words.filter(entry => !entry.bonus).map(entry => entry.word), 'alliance assassination battle nationalism invade archduke empire mobilize neutral declaration conflict trench artillery submarine propaganda casualty draft rationing treaty airplane surrender victory veteran consequence peace'.split(' '));
+  assert.deepEqual(list.words.filter(entry => entry.bonus).map(entry => entry.word), ['survivor']);
+  assert.equal(DEFAULT_LIST_ID, list.id);
+  assert.equal(LISTS[0], list);
+  const queue = makeQueue(list.words, emptyProgress(), { count: 40, includeBonus: false });
+  assert.equal(queue.length, 25);
+  assert.ok(!queue.includes('survivor'));
+  assert.equal(makeQueue(list.words, emptyProgress(), { count: 40 }).length, 26);
 });
