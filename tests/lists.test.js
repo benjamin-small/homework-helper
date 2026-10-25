@@ -169,15 +169,23 @@ test('settings default to the newest list without losing per-list or legacy pref
   assert.equal(writeSettings(undefined, settings), false);
 });
 
-test('Week 10 preserves the supplied order, bonus, and newest-list default', () => {
+test('Week 10 preserves the supplied order and bonus', () => {
   const list = LISTS.find(list => list.id === 'world-war-i-week-10');
   assert.equal(list.title, 'Week 10 · World War I');
   assert.deepEqual(list.words.filter(entry => !entry.bonus).map(entry => entry.word), 'alliance assassination battle nationalism invade archduke empire mobilize neutral declaration conflict trench artillery submarine propaganda casualty draft rationing treaty airplane surrender victory veteran consequence peace'.split(' '));
   assert.deepEqual(list.words.filter(entry => entry.bonus).map(entry => entry.word), ['survivor']);
-  assert.equal(DEFAULT_LIST_ID, list.id);
-  assert.equal(LISTS[0], list);
   const queue = makeQueue(list.words, emptyProgress(), { count: 40, includeBonus: false });
   assert.equal(queue.length, 25);
   assert.ok(!queue.includes('survivor'));
   assert.equal(makeQueue(list.words, emptyProgress(), { count: 40 }).length, 26);
+});
+
+test('Week 11 preserves all 26 numbered words and becomes the newest default', () => {
+  const list = LISTS.find(list => list.id === 'roaring-twenties-week-11');
+  assert.equal(list.title, 'Week 11 · The Roaring Twenties');
+  assert.deepEqual(list.words.map(entry => entry.word), 'automobile assembly radio jazz flapper prohibition speakeasy skyscraper prosperity entertainment celebrity amendment suffrage migration fashion aviation invention consumer advertisement credit stock market crash decade culture renaissance'.split(' '));
+  assert.ok(list.words.every(entry => !entry.bonus));
+  assert.equal(DEFAULT_LIST_ID, list.id);
+  assert.equal(LISTS[0], list);
+  assert.equal(makeQueue(list.words, emptyProgress(), { count: 40, includeBonus: false }).length, 26);
 });

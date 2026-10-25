@@ -2,7 +2,7 @@
 
 [![Repository maturity: Alpha](https://raw.githubusercontent.com/benjamin-small/agentic-harness-development/v2026.1001.190334/docs/badges/maturity-alpha.svg)](https://github.com/benjamin-small/agentic-harness-development/blob/v2026.1001.190334/docs/repository-maturity.md#alpha)
 
-A small, static spelling tutor with selectable vocabulary lists. It includes **Week 7 · The Industrial Revolution** (25 words plus **mechanization**), **Week 8 · Number the Stars** (25 words plus **annihilate**), **Week 9 · Number the Stars — Part 2** (25 words plus **handkerchief**), and **Week 10 · World War I** (25 words plus **survivor**). Built for GitHub Pages, with no server, accounts, API keys, trackers, runtime dependencies, or externally loaded fonts.
+A small, static spelling tutor with selectable vocabulary lists. It includes **Week 7 · The Industrial Revolution** (25 words plus **mechanization**), **Week 8 · Number the Stars** (25 words plus **annihilate**), **Week 9 · Number the Stars — Part 2** (25 words plus **handkerchief**), **Week 10 · World War I** (25 words plus **survivor**), and **Week 11 · The Roaring Twenties** (26 regular words). Built for GitHub Pages, with no server, accounts, API keys, trackers, runtime dependencies, or externally loaded fonts.
 
 **Maturity: Alpha.** Core grading, practice selection, data validation, and persistence have repeatable automated checks. Device speech and real use with a learner still need validation on the target device.
 

@@ -4,7 +4,7 @@ Run `npm run check` to check app syntax, run the Node.js tests, validate all reg
 
 ## Measured baseline
 
-Measured on October 17, 2026 with Node.js 26.10.0: **33 tests pass**, with **80.58% line coverage**, **95.29% branch coverage**, and **94.74% function coverage** for the source modules loaded by the tests. Adding Week 10 expands the loaded data modules; the higher percentages do not indicate broader browser interaction coverage.
+Measured on October 25, 2026 with Node.js 26.10.0: **34 tests pass**, with **81.76% line coverage**, **95.33% branch coverage**, and **94.81% function coverage** for the source modules loaded by the tests. Adding Week 11 expands the loaded data modules; the higher percentages do not indicate broader browser interaction coverage.
 
 Reproduce the native Node.js coverage report with:
 
@@ -24,6 +24,7 @@ This command filters coverage to src/**/*.js and excludes test fixtures and tool
 | lists/week-8.js | 100.00% |
 | lists/week-9.js | 100.00% |
 | lists/week-10.js | 100.00% |
+| lists/week-11.js | 100.00% |
 | question-navigation.js | 38.81% |
 | session.js | 100.00% |
 | storage.js | 100.00% |
@@ -31,7 +32,7 @@ This command filters coverage to src/**/*.js and excludes test fixtures and tool
 ## Automated test scope
 
 - Grading, adaptive mode progression, mastery and review streaks, queue size, bonus-word selection, and gap choices.
-- Vocabulary schemas, all four production lists, exact Weeks 8–10 word order and bonus selection, an independent sample catalog, distinct answer choices, and invalid catalog rejection.
+- Vocabulary schemas, all five production lists, exact Weeks 8–11 word order and bonus status, an independent sample catalog, distinct answer choices, and invalid catalog rejection.
 - Storage validation, malformed or blocked storage, list isolation, resets, legacy Week 7 progress, and preference defaults/migration.
 - Session history, saved question choices and drafts, single grading, single session counting, and canceled/stale auto-advance timers.
 - Gap markup without answer-length hints, swipe-direction classification, and reduced-motion animation guards.
