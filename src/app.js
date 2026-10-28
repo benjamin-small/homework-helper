@@ -1,3 +1,4 @@
+import { startActivityTracking } from './activity.js';
 import { MODES, RESULT_MODES, emptyProgress, gapParts, makeQueue, mastered, needsReview, totals } from './engine.js';
 import { SETTINGS_KEY, progressKey, createProgressStore, readSettings, writeSettings } from './storage.js';
 import { validateCatalog } from './list-schema.js';
@@ -13,6 +14,7 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
   $('#sound-button').innerHTML = speakerIcon;
   let storage;
   try { storage = window.localStorage; } catch { /* Private or restricted browser. */ }
+  const activity = startActivityTracking(storage, { onError: () => notice('Activity tracking could not be saved. The tracker dashboard may be incomplete.') });
   const settings = readSettings(storage, lists, defaultListId);
   let activeList = lists.find(list => list.id === settings.selectedListId);
   const records = createProgressStore(storage);
@@ -255,6 +257,7 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
     const updated = answerQuestion(session, progress, answer);
     if (!updated) return;
     progress = updated;
+    if (answer) activity.answer(question.correct);
     save();
     renderFeedback();
     $('#next-question').focus({ preventScroll: true });
