@@ -87,3 +87,16 @@ body:has(.question-sliding){overflow-x:clip}
 .tile-status{font-size:11px;color:var(--muted);text-align:center;min-height:2.8em;margin:0 0 18px}
 .tile-milestone{font-weight:650;color:var(--purple-dark)}
 @media(max-width:400px){.letter-options{gap:9px}.letter-tile{min-width:65px;padding:10px}.gap-word{font-size:21px;letter-spacing:0}}
+
+/* Browser-local activity dashboard. */
+.tracker { max-width: 1100px; margin: 3rem auto; }
+.tracker h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
+.tracker h2 { margin-top: 2rem; }
+.tracker-totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin: 2rem 0; }
+.tracker-totals > div { background: white; border: 1px solid #ddd; border-radius: 18px; padding: 1.4rem; }
+.tracker-totals strong, .tracker-totals span { display: block; }
+.tracker-totals strong { font-size: 2rem; }
+.tracker-table { overflow-x: auto; margin: 1rem 0; }
+.tracker table { width: 100%; border-collapse: collapse; background: white; }
+.tracker th, .tracker td { text-align: left; padding: .8rem; border-bottom: 1px solid #ddd; white-space: nowrap; }
+.tracker select { max-width: 100%; min-height: 44px; padding: .5rem; font: inherit; border: 1px solid #aaa; border-radius: 8px; }
