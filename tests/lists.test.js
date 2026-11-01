@@ -180,12 +180,21 @@ test('Week 10 preserves the supplied order and bonus', () => {
   assert.equal(makeQueue(list.words, emptyProgress(), { count: 40 }).length, 26);
 });
 
-test('Week 11 preserves all 26 numbered words and becomes the newest default', () => {
+test('Week 11 preserves all 26 numbered words', () => {
   const list = LISTS.find(list => list.id === 'roaring-twenties-week-11');
   assert.equal(list.title, 'Week 11 · The Roaring Twenties');
   assert.deepEqual(list.words.map(entry => entry.word), 'automobile assembly radio jazz flapper prohibition speakeasy skyscraper prosperity entertainment celebrity amendment suffrage migration fashion aviation invention consumer advertisement credit stock market crash decade culture renaissance'.split(' '));
   assert.ok(list.words.every(entry => !entry.bonus));
+  assert.equal(makeQueue(list.words, emptyProgress(), { count: 40, includeBonus: false }).length, 26);
+});
+
+test('Week 12 preserves the supplied words, cornucopia bonus, and newest default', () => {
+  const list = LISTS.find(list => list.id === 'thanksgiving-and-november-week-12');
+  assert.equal(list.title, 'Week 12 · Thanksgiving and November');
+  assert.deepEqual(list.words.filter(entry => !entry.bonus).map(entry => entry.word), 'thanksgiving gratitude harvest pilgrim voyage settlement feast celebrate tradition blessing generous thankful autumn november cranberry pumpkin turkey stuffing together kindness appreciate community mayflower plentiful share'.split(' '));
+  assert.deepEqual(list.words.filter(entry => entry.bonus).map(entry => entry.word), ['cornucopia']);
   assert.equal(DEFAULT_LIST_ID, list.id);
   assert.equal(LISTS[0], list);
-  assert.equal(makeQueue(list.words, emptyProgress(), { count: 40, includeBonus: false }).length, 26);
+  assert.equal(makeQueue(list.words, emptyProgress(), { count: 40, includeBonus: false }).length, 25);
+  assert.equal(makeQueue(list.words, emptyProgress(), { count: 40 }).length, 26);
 });
