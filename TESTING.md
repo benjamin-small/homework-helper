@@ -4,7 +4,7 @@ Run `npm run check` to check app syntax, run the Node.js tests, validate all reg
 
 ## Measured baseline
 
-Measured on October 28, 2026 with Node.js 26.10.0: **41 tests pass**, with **84.67% line coverage**, **95.30% branch coverage**, and **94.12% function coverage** for the source modules loaded by the tests. Activity tracking adds a loaded logic module; these percentages do not establish browser interaction coverage.
+Measured on November 1, 2026 with Node.js 26.10.0: **42 tests pass**, with **85.41% line coverage**, **95.33% branch coverage**, and **94.17% function coverage** for the source modules loaded by the tests. Week 12 adds a loaded vocabulary module; these percentages do not establish browser interaction coverage.
 
 Reproduce the native Node.js coverage report with:
 
@@ -26,6 +26,7 @@ This command filters coverage to src/**/*.js and excludes test fixtures and tool
 | lists/week-9.js | 100.00% |
 | lists/week-10.js | 100.00% |
 | lists/week-11.js | 100.00% |
+| lists/week-12.js | 100.00% |
 | question-navigation.js | 38.81% |
 | session.js | 100.00% |
 | storage.js | 100.00% |
@@ -35,7 +36,7 @@ This command filters coverage to src/**/*.js and excludes test fixtures and tool
 - Activity timing across minute boundaries, idle and focus pauses, overlapping tabs, weighted rates, calendar rollups, malformed data, and blocked storage.
 
 - Grading, adaptive mode progression, mastery and review streaks, queue size, bonus-word selection, and gap choices.
-- Vocabulary schemas, all five production lists, exact Weeks 8–11 word order and bonus status, an independent sample catalog, distinct answer choices, and invalid catalog rejection.
+- Vocabulary schemas, all six production lists, exact Weeks 8–12 word order and bonus status, an independent sample catalog, distinct answer choices, and invalid catalog rejection.
 - Storage validation, malformed or blocked storage, list isolation, resets, legacy Week 7 progress, and preference defaults/migration.
 - Session history, saved question choices and drafts, single grading, single session counting, and canceled/stale auto-advance timers.
 - Gap markup without answer-length hints, swipe-direction classification, and reduced-motion animation guards.
