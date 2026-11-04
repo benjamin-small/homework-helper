@@ -4,7 +4,7 @@ Run `npm run check` to check app syntax, run the Node.js tests, validate all reg
 
 ## Measured baseline
 
-Measured on November 1, 2026 with Node.js 26.10.0: **42 tests pass**, with **85.41% line coverage**, **95.33% branch coverage**, and **94.17% function coverage** for the source modules loaded by the tests. Week 12 adds a loaded vocabulary module; these percentages do not establish browser interaction coverage.
+Measured on November 3, 2026 with Node.js 26.10.0: **46 tests pass**, with **86.29% line coverage**, **95.01% branch coverage**, and **94.87% function coverage** for the source modules loaded by the tests. List customization adds a loaded logic module; these percentages do not establish browser interaction coverage.
 
 Reproduce the native Node.js coverage report with:
 
@@ -12,7 +12,7 @@ Reproduce the native Node.js coverage report with:
 npm run test:coverage
 ```
 
-This command filters coverage to src/**/*.js and excludes test fixtures and tooling. Node.js reports loaded modules only: src/app.js, src/main.js, and src/tracker.js are not imported by the unit tests and are absent from the denominator. These percentages are not whole-application coverage. No minimum coverage threshold is currently imposed. Update the dated measurement and scope when tested source changes.
+This command filters coverage to src/**/*.js and excludes test fixtures and tooling. Node.js reports loaded modules only: src/app.js, src/main.js, src/parent-editor.js, and src/tracker.js are not imported by the unit tests and are absent from the denominator. These percentages are not whole-application coverage. No minimum coverage threshold is currently imposed. Update the dated measurement and scope when tested source changes.
 
 | Loaded source | Line coverage |
 | --- | ---: |
@@ -20,6 +20,7 @@ This command filters coverage to src/**/*.js and excludes test fixtures and tool
 | engine.js | 100.00% |
 | gap-exercise.js | 20.20% |
 | list-schema.js | 100.00% |
+| list-edits.js | 100.00% |
 | lists.js | 100.00% |
 | lists/week-7.js | 100.00% |
 | lists/week-8.js | 100.00% |
@@ -50,3 +51,7 @@ Use `npm run dev`; /test-lists.html includes a local-only sample list. For inter
 ### Activity dashboard acceptance (October 28, 2026)
 
 Local browser checks used synthetic submissions, not learner evidence. One submission in each of the four activities produced four total answers (three correct); skipping and reviewing an earlier question did not add submissions. Dashboard totals stayed unchanged while it was open. Daily, Monday-based weekly, and monthly selections preserved the same totals. A 375px viewport had matching innerWidth and document scrollWidth, with the wider detail tables contained in focusable scroll regions. Reduced-motion rendering was checked. Idle cutoffs, focus loss, overlapping records, calendar grouping, and blocked storage are covered by deterministic tests; physical-device interaction and audible speech were not revalidated for this change.
+
+### Parent editor acceptance (November 3, 2026)
+
+Synthetic browser checks covered adding, editing meaning and spelling, deleting a custom word, hiding/restoring a supplied word, reload persistence, and absence of supplied-word deletion controls. The 375px editor viewport had matching document and viewport widths. Unit checks cover list isolation, hidden words in queues and meaning alternatives, retained progress after custom deletion, schema-valid generated exercises, malformed edits, stale writes, and unavailable storage. Custom teaching content and device speech quality are not automatically verified.
