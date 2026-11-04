@@ -1,3 +1,5 @@
+import { EDITS_PREFIX, readEdits, editedList, practiceWords } from './list-edits.js';
+import { mountParentEditor } from './parent-editor.js';
 import { startActivityTracking } from './activity.js';
 import { MODES, RESULT_MODES, emptyProgress, gapParts, makeQueue, mastered, needsReview, totals } from './engine.js';
 import { SETTINGS_KEY, progressKey, createProgressStore, readSettings, writeSettings } from './storage.js';
@@ -16,7 +18,10 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
   try { storage = window.localStorage; } catch { /* Private or restricted browser. */ }
   const activity = startActivityTracking(storage, { onError: () => notice('Activity tracking could not be saved. The tracker dashboard may be incomplete.') });
   const settings = readSettings(storage, lists, defaultListId);
-  let activeList = lists.find(list => list.id === settings.selectedListId);
+  let sourceList = lists.find(list => list.id === settings.selectedListId);
+  let edits = readEdits(storage, sourceList);
+  let activeList = editedList(sourceList, edits);
+  const visibleWords = () => practiceWords(activeList, edits);
   const records = createProgressStore(storage);
   const loaded = records.load(activeList);
   let progress = loaded.progress;
@@ -129,10 +134,10 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
   }
   function focusTitle() { app.querySelector('h1')?.focus({ preventScroll: true }); }
   function progressAside() {
-    const total = totals(activeList.words, progress);
+    const total = totals(visibleWords(), progress);
     return `<aside class="progress-panel"><span class="eyebrow">LITTLE STEPS, BIG THINGS</span>
       <h2>Your words are<br>taking shape.</h2>
-      <div class="progress-orbit" style="--progress:${total.mastered / activeList.words.length * 100}%"><div><strong>${total.mastered}<span> / ${activeList.words.length}</span></strong><small>words feeling solid</small></div><span class="orbit-star" aria-hidden="true">✦</span></div>
+      <div class="progress-orbit" style="--progress:${total.mastered / Math.max(1, visibleWords().length) * 100}%"><div><strong>${total.mastered}<span> / ${visibleWords().length}</span></strong><small>words feeling solid</small></div><span class="orbit-star" aria-hidden="true">✦</span></div>
       <p class="aside-copy">A word feels solid after you spell it correctly twice in a row without hints.</p>
       <div class="mini-stats"><div><strong>${total.practiced}</strong><span>words tried</span></div><div><strong>${total.attempts ? total.accuracy + '%' : '—'}</strong><span>answers correct</span></div></div>
       <div class="gentle-note"><span aria-hidden="true">✧</span><p>Getting stuck is part of learning. We’ll give tricky words a little extra love.</p></div>
@@ -140,25 +145,33 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
   }
   function showHome() {
     session = null; question = null;
-    const total = totals(activeList.words, progress);
-    const eligibleReview = activeList.words.filter(entry => (includeBonus() || !entry.bonus) && needsReview(progress.words[entry.word])).length;
-    const available = activeList.words.filter(entry => includeBonus() || !entry.bonus).length;
-    const bonusCount = activeList.words.filter(entry => entry.bonus).length;
+    edits = readEdits(storage, sourceList);
+    activeList = editedList(sourceList, edits);
+    const refreshed = records.load(activeList);
+    progress = refreshed.progress;
+    if (edits.error) notice(edits.error);
+    const total = totals(visibleWords(), progress);
+    const eligibleReview = visibleWords().filter(entry => (includeBonus() || !entry.bonus) && needsReview(progress.words[entry.word])).length;
+    const available = visibleWords().filter(entry => includeBonus() || !entry.bonus).length;
+    const bonusCount = visibleWords().filter(entry => entry.bonus).length;
     const questionCount = Math.min(12, available);
     setView('home', `<section class="list-picker" aria-label="Vocabulary list"><div><label for="list-select">Practice list</label><select id="list-select">${lists.map(list => `<option value="${list.id}" ${list.id === activeList.id ? 'selected' : ''}>${escapeHtml(list.title)}</option>`).join('')}</select></div><p>${escapeHtml(activeList.description || 'Choose a list and start practicing.')}<span>Each list has its own saved progress.</span></p></section>
+      <p class="parent-entry"><button class="text-button" id="parent-editor-button">Parent editor · View and edit words</button></p>
       <section class="intro"><div><span class="eyebrow">${escapeHtml(activeList.title)}</span>
       <h1 tabindex="-1">Small steps.<br><span>Strong spellers.</span></h1><p>A few words, a little practice, and a whole lot of “I did it.”<br class="desktop-break"> Let’s build your spelling confidence.</p></div>
       <div class="letter-art" aria-hidden="true"><span class="art-spark spark-one">✳</span><span class="art-spark spark-two">✦</span><div class="tile tile-w">w</div><div class="tile tile-o">o</div><div class="tile tile-r">r</div><div class="tile tile-d">d</div><span class="art-caption">good things take practice</span><span class="pencil">✎</span></div></section>
       <div class="home-grid"><div class="home-main"><section class="start-card"><div class="start-top"><span class="pill"><span class="tiny-star">✦</span> MADE FOR YOUR NEXT STEP</span><span class="session-length">${questionCount} questions · about ${Math.max(1, Math.ceil(questionCount * 5 / 12))} min</span></div>
-        <h2>${total.attempts ? 'A little more practice?' : 'Ready, set, spell.'}</h2><p>${total.attempts ? 'We’ll mix in fresh practice and give your trickiest words another turn.' : 'Start with meanings, build up your spelling, and finish with the whole word. We’ll find your next step as you go.'}</p>
-        <div class="start-actions"><button class="primary" id="start-practice">${total.attempts ? 'Keep practicing' : 'Let’s practice'} <span aria-hidden="true">→</span></button><button class="text-button" id="review-practice" ${eligibleReview ? '' : 'disabled'}>Practice tricky words${eligibleReview ? ` (${eligibleReview})` : ''} <span aria-hidden="true">↗</span></button></div>
+        ${available < 3 ? '<p role="status">Restore or add at least three practice words to start an activity.</p>' : ''}<h2>${total.attempts ? 'A little more practice?' : 'Ready, set, spell.'}</h2><p>${total.attempts ? 'We’ll mix in fresh practice and give your trickiest words another turn.' : 'Start with meanings, build up your spelling, and finish with the whole word. We’ll find your next step as you go.'}</p>
+        <div class="start-actions"><button class="primary" id="start-practice" ${available < 3 ? 'disabled' : ''}>${total.attempts ? 'Keep practicing' : 'Let’s practice'} <span aria-hidden="true">→</span></button><button class="text-button" id="review-practice" ${eligibleReview && available >= 3 ? '' : 'disabled'}>Practice tricky words${eligibleReview ? ` (${eligibleReview})` : ''} <span aria-hidden="true">↗</span></button></div>
         <div class="bonus-row">${bonusCount ? `<label><input id="bonus-toggle" type="checkbox" ${includeBonus() ? 'checked' : ''}> Include the bonus ${bonusCount === 1 ? 'word' : 'words'}</label>` : ''}<span>${available} words to explore</span></div>
-      </section><section class="activities"><div class="section-heading"><h2>Find your own rhythm</h2><span>Or pick an activity</span></div><div class="mode-grid">${MODES.map(mode => `<button class="mode-card mode-${mode.id}" data-mode="${mode.id}"><span class="mode-icon">${mode.icon}</span><strong>${mode.title}</strong><span>${mode.description}</span><span class="mode-arrow" aria-hidden="true">↗</span></button>`).join('')}</div></section>
+      </section><section class="activities"><div class="section-heading"><h2>Find your own rhythm</h2><span>Or pick an activity</span></div><div class="mode-grid">${MODES.map(mode => `<button class="mode-card mode-${mode.id}" data-mode="${mode.id}" ${available < 3 ? 'disabled' : ''}><span class="mode-icon">${mode.icon}</span><strong>${mode.title}</strong><span>${mode.description}</span><span class="mode-arrow" aria-hidden="true">↗</span></button>`).join('')}</div></section>
       <p class="quiet-line">No timers. No rush. Just you, getting a little better.</p></div>${progressAside()}</div>`);
     $('#list-select').addEventListener('change', event => {
       const next = lists.find(list => list.id === event.target.value);
       if (!next || next.id === activeList.id || view !== 'home') return;
-      activeList = next;
+      sourceList = next;
+      edits = readEdits(storage, sourceList);
+      activeList = editedList(sourceList, edits);
       const loaded = records.load(activeList);
       progress = loaded.progress;
       settings.selectedListId = activeList.id;
@@ -167,19 +180,26 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
       showHome();
       $('#list-select').focus();
     });
+    $('#parent-editor-button').addEventListener('click', () => {
+      session = null; question = null;
+      setView('editor', '');
+      mountParentEditor({ app, list: sourceList, edits, storage, escapeHtml,
+        onDone: () => { showHome(); $('#parent-editor-button').focus(); } });
+    });
     $('#start-practice').addEventListener('click', () => startSession());
     $('#review-practice').addEventListener('click', () => startSession('adaptive', true));
     $('#bonus-toggle')?.addEventListener('change', event => { settings.bonusByList[activeList.id] = event.target.checked; saveSettings(); showHome(); $('#bonus-toggle').focus(); });
     app.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => startSession(button.dataset.mode)));
   }
   function startSession(mode = 'adaptive', review = false, wordList = null) {
-    const queue = wordList || makeQueue(activeList.words, progress, { review, includeBonus: includeBonus() });
+    if (visibleWords().filter(entry => includeBonus() || !entry.bonus).length < 3) { showHome(); return; }
+    const queue = wordList || makeQueue(visibleWords(), progress, { review, includeBonus: includeBonus() });
     if (!queue.length) { showHome(); return; }
     session = createSession(activeList.id, queue, mode, review);
     showQuestion();
   }
   function showQuestion() {
-    question = questionFor(session, activeList.words, progress);
+    question = questionFor(session, visibleWords(), progress);
     const { entry, mode, gapMethod } = question;
     reviewingQuestion = question.graded;
     const current = modeById(mode);
@@ -351,8 +371,8 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
   }
   function showProgress() {
     if (view === 'quiz') { showSummary(); return; }
-    const total = totals(activeList.words, progress);
-    setView('progress', `<div class="quiz-topline"><button class="text-button" id="back-home">← Back to practice</button><span>YOUR LEARNING NOTEBOOK</span></div><section class="progress-page"><span class="eyebrow">ONE WORD AT A TIME</span><h1 tabindex="-1">Look how far you’ve come.</h1><p>${total.mastered} words feeling solid. ${total.practiced} words tried. Every little bit adds up.</p><div class="progress-legend"><span>○ Not tried</span><span>◐ Practicing</span><span>✓ Feeling solid</span></div><div class="word-list">${activeList.words.map(entry => {
+    const total = totals(visibleWords(), progress);
+    setView('progress', `<div class="quiz-topline"><button class="text-button" id="back-home">← Back to practice</button><span>YOUR LEARNING NOTEBOOK</span></div><section class="progress-page"><span class="eyebrow">ONE WORD AT A TIME</span><h1 tabindex="-1">Look how far you’ve come.</h1><p>${total.mastered} words feeling solid. ${total.practiced} words tried. Every little bit adds up.</p><div class="progress-legend"><span>○ Not tried</span><span>◐ Practicing</span><span>✓ Feeling solid</span></div><div class="word-list">${visibleWords().map(entry => {
       const stats = progress.words[entry.word];
       const status = mastered(stats) ? 'solid' : stats ? 'practicing' : 'new';
       return `<details class="word-row status-${status}"><summary><span class="word-status" role="img" aria-label="${status === 'solid' ? 'Feeling solid' : status === 'new' ? 'Not tried' : 'Practicing'}">${status === 'solid' ? '✓' : status === 'new' ? '○' : '◐'}</span><strong>${entry.word}${entry.bonus ? '<small> BONUS</small>' : ''}</strong><span class="word-result">${stats ? `${stats.correct} / ${stats.attempts} correct` : 'Ready to try'}</span><span aria-hidden="true">＋</span></summary><div class="word-detail"><p>${escapeHtml(entry.definition)}</p><p class="fine-print">${escapeHtml(entry.hint)}</p><div class="mode-results">${RESULT_MODES.map(mode => `<span>${mode.short}: ${stats?.modes[mode.id] ? `${stats.modes[mode.id].correct}/${stats.modes[mode.id].attempts}` : 'not tried'}</span>`).join('')}</div><button class="secondary" data-practice-word="${entry.word}">Practice this word →</button></div></details>`;
@@ -371,8 +391,9 @@ export function startApp(lists, defaultListId = lists[0]?.id) {
   });
   // Follow another tab's latest saved totals before the next answer is recorded.
   window.addEventListener('storage', event => {
+    if (event.key === EDITS_PREFIX + activeList.id && view === 'home') { showHome(); return; }
     if (event.key !== progressKey(activeList) && event.key !== null) return;
-    const fresh = records.load(activeList);
+    const fresh = records.load(editedList(sourceList, readEdits(storage, sourceList)));
     if (!fresh.error) { progress = fresh.progress; if (view === 'home') showHome(); else if (view === 'progress') showProgress(); }
   });
   window.addEventListener('pagehide', () => { cancelAutoAdvance(); stopSpeech(); });

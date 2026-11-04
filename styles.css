@@ -47,7 +47,7 @@ body:has(.question-sliding){overflow-x:clip}
   border-radius: 12px;
   letter-spacing: 1px;
 }
-.gap-word > span { flex: 0 0 auto; }
+.gap-word > span { flex: 0 0 auto; max-width: 100%; overflow-wrap: anywhere; }
 .gap-word > span:empty { display: none; }
 .gap-input, .gap-drop {
   flex: 0 0 3em;
@@ -100,3 +100,17 @@ body:has(.question-sliding){overflow-x:clip}
 .tracker table { width: 100%; border-collapse: collapse; background: white; }
 .tracker th, .tracker td { text-align: left; padding: .8rem; border-bottom: 1px solid #ddd; white-space: nowrap; }
 .tracker select { max-width: 100%; min-height: 44px; padding: .5rem; font: inherit; border: 1px solid #aaa; border-radius: 8px; }
+
+.parent-entry { margin: 1rem 0; }
+.parent-editor { max-width: 900px; margin: 2rem auto; }
+.parent-editor h1 { font-size: clamp(1.8rem, 5vw, 3rem); }
+.parent-form { display: grid; gap: .75rem; background: #fff; border: 1px solid #ddd; border-radius: 18px; padding: 1.25rem; margin: 1.5rem 0; }
+.parent-form input, .parent-form textarea { width: 100%; min-width: 0; padding: .75rem; font: inherit; border: 1px solid #aaa; border-radius: 8px; }
+.parent-form textarea { min-height: 90px; resize: vertical; }
+.parent-words { padding: 0; list-style: none; }
+.parent-word { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; padding: 1.25rem 0; border-bottom: 1px solid #ddd; }
+.parent-word > div { min-width: 0; overflow-wrap: anywhere; }
+.parent-word > div:first-child { flex: 1 1 280px; }
+.parent-word span { display: block; font-size: .85rem; }
+.parent-actions { display: flex; align-items: start; flex-wrap: wrap; gap: .5rem; }
+.parent-actions button, #cancel-custom { min-height: 44px; padding: .6rem .9rem; font: inherit; border: 1px solid #aaa; background: white; border-radius: 8px; }
