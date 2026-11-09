@@ -188,13 +188,29 @@ test('Week 11 preserves all 26 numbered words', () => {
   assert.equal(makeQueue(list.words, emptyProgress(), { count: 40, includeBonus: false }).length, 26);
 });
 
-test('Week 12 preserves the supplied words, cornucopia bonus, and newest default', () => {
+test('Week 12 preserves the supplied words and cornucopia bonus', () => {
   const list = LISTS.find(list => list.id === 'thanksgiving-and-november-week-12');
   assert.equal(list.title, 'Week 12 · Thanksgiving and November');
   assert.deepEqual(list.words.filter(entry => !entry.bonus).map(entry => entry.word), 'thanksgiving gratitude harvest pilgrim voyage settlement feast celebrate tradition blessing generous thankful autumn november cranberry pumpkin turkey stuffing together kindness appreciate community mayflower plentiful share'.split(' '));
   assert.deepEqual(list.words.filter(entry => entry.bonus).map(entry => entry.word), ['cornucopia']);
+  assert.equal(makeQueue(list.words, emptyProgress(), { count: 40, includeBonus: false }).length, 25);
+  assert.equal(makeQueue(list.words, emptyProgress(), { count: 40 }).length, 26);
+});
+
+test('Week 13 preserves the supplied words, Roosevelt bonus, and newest default', () => {
+  const list = LISTS.find(list => list.id === 'great-depression-and-dust-bowl-week-13');
+  assert.equal(list.title, 'Week 13 · The Great Depression and the Dust Bowl');
+  assert.deepEqual(list.words.filter(entry => !entry.bonus).map(entry => entry.word), 'depression economy unemployed mortgage poverty hunger shelter drought desperate devastation prairie farmer livestock conservation erosion migrate hardship relief charity struggle survive plains tractor debt recovery'.split(' '));
+  assert.deepEqual(list.words.filter(entry => entry.bonus).map(entry => entry.word), ['roosevelt']);
   assert.equal(DEFAULT_LIST_ID, list.id);
   assert.equal(LISTS[0], list);
   assert.equal(makeQueue(list.words, emptyProgress(), { count: 40, includeBonus: false }).length, 25);
   assert.equal(makeQueue(list.words, emptyProgress(), { count: 40 }).length, 26);
+});
+
+test('Week 13 meaning choices keep overlapping meanings apart', () => {
+  const { words } = LISTS.find(list => list.id === 'great-depression-and-dust-bowl-week-13');
+  for (const [word, other] of [['prairie', 'plains'], ['plains', 'prairie'], ['relief', 'charity'], ['charity', 'relief']]) {
+    assert.ok(!choices(words, words.find(entry => entry.word === word), 'meaning').includes(other));
+  }
 });
