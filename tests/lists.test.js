@@ -197,13 +197,11 @@ test('Week 12 preserves the supplied words and cornucopia bonus', () => {
   assert.equal(makeQueue(list.words, emptyProgress(), { count: 40 }).length, 26);
 });
 
-test('Week 13 preserves the supplied words, Roosevelt bonus, and newest default', () => {
+test('Week 13 preserves the supplied words and Roosevelt bonus', () => {
   const list = LISTS.find(list => list.id === 'great-depression-and-dust-bowl-week-13');
   assert.equal(list.title, 'Week 13 · The Great Depression and the Dust Bowl');
   assert.deepEqual(list.words.filter(entry => !entry.bonus).map(entry => entry.word), 'depression economy unemployed mortgage poverty hunger shelter drought desperate devastation prairie farmer livestock conservation erosion migrate hardship relief charity struggle survive plains tractor debt recovery'.split(' '));
   assert.deepEqual(list.words.filter(entry => entry.bonus).map(entry => entry.word), ['roosevelt']);
-  assert.equal(DEFAULT_LIST_ID, list.id);
-  assert.equal(LISTS[0], list);
   assert.equal(makeQueue(list.words, emptyProgress(), { count: 40, includeBonus: false }).length, 25);
   assert.equal(makeQueue(list.words, emptyProgress(), { count: 40 }).length, 26);
 });
@@ -212,5 +210,26 @@ test('Week 13 meaning choices keep overlapping meanings apart', () => {
   const { words } = LISTS.find(list => list.id === 'great-depression-and-dust-bowl-week-13');
   for (const [word, other] of [['prairie', 'plains'], ['plains', 'prairie'], ['relief', 'charity'], ['charity', 'relief']]) {
     assert.ok(!choices(words, words.find(entry => entry.word === word), 'meaning').includes(other));
+  }
+});
+
+test('Week 14 preserves the supplied words, hydroelectric bonus, and newest default', () => {
+  const list = LISTS.find(list => list.id === 'new-deal-week-14');
+  assert.equal(list.title, 'Week 14 · The New Deal');
+  assert.deepEqual(list.words.filter(entry => !entry.bonus).map(entry => entry.word), 'reform federal government program president election administration security insurance legislation agency employment project construction electricity irrigation pension retirement benefits optimism confidence broadcast campaign investment bankrupt'.split(' '));
+  assert.deepEqual(list.words.filter(entry => entry.bonus).map(entry => entry.word), ['hydroelectric']);
+  assert.equal(DEFAULT_LIST_ID, list.id);
+  assert.equal(LISTS[0], list);
+  const withoutBonus = makeQueue(list.words, emptyProgress(), { count: 40, includeBonus: false });
+  assert.equal(withoutBonus.length, 25);
+  assert.ok(!withoutBonus.includes('hydroelectric'));
+  assert.equal(makeQueue(list.words, emptyProgress(), { count: 40 }).length, 26);
+});
+
+test('Week 14 meaning choices keep related terms from competing', () => {
+  const { words } = LISTS.find(list => list.id === 'new-deal-week-14');
+  for (const word of ['government', 'administration', 'agency', 'program', 'project', 'pension', 'benefits', 'insurance', 'security', 'optimism', 'confidence']) {
+    const options = choices(words, words.find(entry => entry.word === word), 'meaning');
+    assert.deepEqual(options.sort(), [word, 'irrigation', 'broadcast'].sort());
   }
 });
