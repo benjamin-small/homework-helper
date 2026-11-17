@@ -5,8 +5,9 @@ import week10 from './lists/week-10.js';
 import week11 from './lists/week-11.js';
 import week12 from './lists/week-12.js';
 import week13 from './lists/week-13.js';
+import week14 from './lists/week-14.js';
 
 // Keep IDs stable: they identify saved progress, independently of display titles.
 // Append new lists here in the order they are added, including non-weekly lists.
-export const LISTS = [week7, week8, week9, week10, week11, week12, week13].reverse();
+export const LISTS = [week7, week8, week9, week10, week11, week12, week13, week14].reverse();
 export const DEFAULT_LIST_ID = LISTS[0].id;

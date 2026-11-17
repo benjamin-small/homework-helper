@@ -4,7 +4,7 @@ Run `npm run check` to check app syntax, run the Node.js tests, validate all reg
 
 ## Measured baseline
 
-Measured on November 9, 2026 with Node.js 26.10.0: **48 tests pass**, with **86.95% line coverage**, **95.07% branch coverage**, and **94.96% function coverage** for the source modules loaded by the tests. Week 13 adds a loaded vocabulary module; these percentages do not establish browser interaction coverage.
+Measured on November 16, 2026 with Node.js 26.10.0: **50 tests pass**, with **87.54% line coverage**, **95.12% branch coverage**, and **95.04% function coverage** for the source modules loaded by the tests. Week 14 adds a loaded vocabulary module; these percentages do not establish browser interaction coverage.
 
 Reproduce the native Node.js coverage report with:
 
@@ -29,6 +29,7 @@ This command filters coverage to src/**/*.js and excludes test fixtures and tool
 | lists/week-11.js | 100.00% |
 | lists/week-12.js | 100.00% |
 | lists/week-13.js | 100.00% |
+| lists/week-14.js | 100.00% |
 | question-navigation.js | 38.81% |
 | session.js | 100.00% |
 | storage.js | 100.00% |
@@ -38,7 +39,7 @@ This command filters coverage to src/**/*.js and excludes test fixtures and tool
 - Activity timing across minute boundaries, idle and focus pauses, overlapping tabs, weighted rates, calendar rollups, malformed data, and blocked storage.
 
 - Grading, adaptive mode progression, mastery and review streaks, queue size, bonus-word selection, and gap choices.
-- Vocabulary schemas, all seven production lists, exact Weeks 8–13 word order and bonus status, Week 13 meaning alternatives, an independent sample catalog, distinct answer choices, and invalid catalog rejection.
+- Vocabulary schemas, all eight production lists, exact Weeks 8–14 word order and bonus status, Weeks 13–14 meaning alternatives, an independent sample catalog, distinct answer choices, and invalid catalog rejection.
 - Storage validation, malformed or blocked storage, list isolation, resets, legacy Week 7 progress, and preference defaults/migration.
 - Session history, saved question choices and drafts, single grading, single session counting, and canceled/stale auto-advance timers.
 - Gap markup without answer-length hints, swipe-direction classification, and reduced-motion animation guards.
@@ -60,3 +61,7 @@ Synthetic browser checks covered adding, editing meaning and spelling, deleting 
 ### Week 13 acceptance (November 9, 2026)
 
 The local browser preview selected Week 13 by default and showed 25 or 26 words as the bonus was switched off/on. Synthetic keyboard submissions exercised all four activities and their feedback at 375px. A temporary fixture outside production rendered all 26 words in tile and typed-gap forms: all 52 layouts stayed inside their cards without document overflow at 320, 390, 816, and 1280px. Reduced-motion emulation disabled button transitions; automated tests also cover reduced-motion navigation. The temporary fixture was removed. Physical-device input and audible pronunciation were not verified. These are local checks, not evidence of publication.
+
+### Week 14 acceptance (November 16, 2026)
+
+The local browser preview selected Week 14 by default and showed 25 or 26 words with the bonus off/on. Synthetic keyboard submissions exercised all four activities and their feedback at 375px, with no document overflow. A temporary fixture outside production rendered all 26 words in tile and typed-gap forms: all 52 layouts stayed inside their cards without document overflow at 320, 390, 816, and 1280px. Reduced-motion emulation disabled button transitions. The temporary fixture was removed. Physical-device input and audible pronunciation were not verified. These checks cover the local preview, not publication.
